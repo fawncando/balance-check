@@ -9,7 +9,10 @@ const routes = [
     children: [
       { path: '', redirect: '/workbench' },
       { path: 'workbench', name: 'workbench', component: () => import('../views/WorkbenchView.vue') },
-      { path: 'records', name: 'records', component: () => import('../views/PlaceholderView.vue'), props: { title: '校验记录查询', batch: '第 5、6 批次' } },
+      { path: 'records', name: 'records', component: () => import('../views/CalibrationsView.vue') },
+      { path: 'calibrations/new', name: 'calibrationNew', component: () => import('../views/CalibrationFormView.vue') },
+      { path: 'calibrations/:id', name: 'calibrationDetail', component: () => import('../views/CalibrationDetailView.vue') },
+      { path: 'calibrations/:id/edit', name: 'calibrationEdit', component: () => import('../views/CalibrationFormView.vue') },
       { path: 'reviews', name: 'reviews', component: () => import('../views/PlaceholderView.vue'), props: { title: '待复核记录', batch: '第 6 批次' } },
       { path: 'balances', name: 'balances', component: () => import('../views/BalancesView.vue') },
       { path: 'logs', name: 'logs', component: () => import('../views/PlaceholderView.vue'), props: { title: '操作日志', batch: '第 7 批次' } }

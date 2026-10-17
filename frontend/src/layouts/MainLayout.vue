@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import {
-  DataAnalysis, Document, Files, Monitor, Setting, SwitchButton, View
+  DataAnalysis, Document, EditPen, Files, Monitor, SwitchButton, View
 } from '@element-plus/icons-vue'
 import { auth, logout, roleLabel } from '../stores/auth'
 
@@ -13,6 +13,7 @@ const router = useRouter()
 const menus = [
   { index: '/workbench', title: '检验工作台', icon: Monitor },
   { index: '/records', title: '校验记录查询', icon: Document },
+  { index: '/calibrations/new', title: '新建校验记录', icon: EditPen },
   { index: '/reviews', title: '待复核记录', icon: View },
   { index: '/balances', title: '天平清单', icon: Files },
   { index: '/logs', title: '操作日志', icon: DataAnalysis }
@@ -45,14 +46,14 @@ async function onLogout() {
       <aside class="side">
         <div class="group">校验业务</div>
         <el-menu :default-active="active" router class="menu">
-          <el-menu-item v-for="item in menus.slice(0, 3)" :key="item.index" :index="item.index">
+          <el-menu-item v-for="item in menus.slice(0, 4)" :key="item.index" :index="item.index">
             <el-icon><component :is="item.icon" /></el-icon>
             <span>{{ item.title }}</span>
           </el-menu-item>
         </el-menu>
         <div class="group">基础数据</div>
         <el-menu :default-active="active" router class="menu">
-          <el-menu-item v-for="item in menus.slice(3)" :key="item.index" :index="item.index">
+          <el-menu-item v-for="item in menus.slice(4)" :key="item.index" :index="item.index">
             <el-icon><component :is="item.icon" /></el-icon>
             <span>{{ item.title }}</span>
           </el-menu-item>

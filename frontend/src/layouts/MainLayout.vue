@@ -14,7 +14,7 @@ const menus = [
   { index: '/workbench', title: '检验工作台', icon: Monitor },
   { index: '/records', title: '校验记录查询', icon: Document },
   { index: '/calibrations/new', title: '新建校验记录', icon: EditPen },
-  { index: '/reviews', title: '待复核记录', icon: View },
+  { index: '/reviews', title: '复核工作台', icon: View },
   { index: '/balances', title: '天平清单', icon: Files },
   { index: '/logs', title: '操作日志', icon: DataAnalysis }
 ]
@@ -59,8 +59,8 @@ async function onLogout() {
           </el-menu-item>
         </el-menu>
         <div class="version">
-          批次 3 · 框架版本<br />
-          登录 / 上传 / 天平清单
+          批次 6 · 复核与查询<br />
+          记录查询 / 复核 / 记录表导出
         </div>
       </aside>
       <main class="main">

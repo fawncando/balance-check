@@ -1,4 +1,5 @@
-const RATE = 0.0005
+// 与后端 JudgementService 保持一致：限度按标称值的 ±0.05% 计算
+export const LIMIT_RATE = 0.0005
 
 export function scaleForDivision(divisionMg) {
   let grams = Number(divisionMg) / 1000
@@ -12,8 +13,8 @@ export function scaleForDivision(divisionMg) {
 export function limits(nominalG, scale) {
   const nominal = Number(nominalG)
   return {
-    lower: Number((nominal * (1 - RATE)).toFixed(scale)),
-    upper: Number((nominal * (1 + RATE)).toFixed(scale))
+    lower: Number((nominal * (1 - LIMIT_RATE)).toFixed(scale)),
+    upper: Number((nominal * (1 + LIMIT_RATE)).toFixed(scale))
   }
 }
 

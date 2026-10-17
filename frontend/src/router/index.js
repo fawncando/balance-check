@@ -13,7 +13,7 @@ const routes = [
       { path: 'calibrations/new', name: 'calibrationNew', component: () => import('../views/CalibrationFormView.vue') },
       { path: 'calibrations/:id', name: 'calibrationDetail', component: () => import('../views/CalibrationDetailView.vue') },
       { path: 'calibrations/:id/edit', name: 'calibrationEdit', component: () => import('../views/CalibrationFormView.vue') },
-      { path: 'reviews', name: 'reviews', component: () => import('../views/PlaceholderView.vue'), props: { title: '待复核记录', batch: '第 6 批次' } },
+      { path: 'reviews', name: 'reviews', component: () => import('../views/ReviewView.vue') },
       { path: 'balances', name: 'balances', component: () => import('../views/BalancesView.vue') },
       { path: 'logs', name: 'logs', component: () => import('../views/PlaceholderView.vue'), props: { title: '操作日志', batch: '第 7 批次' } }
     ]

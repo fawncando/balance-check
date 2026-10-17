@@ -26,6 +26,17 @@ const saving = ref(false)
 const currentBalance = computed(() => balances.value.find((b) => b.id === balanceId.value))
 const filled = computed(() => rows.value.filter((r) => r.displayValue !== null && r.displayValue !== '').length)
 const overall = computed(() => rows.value.length > 0 && rows.value.every((r) => resultOf(r).ok === true))
+const verdictText = computed(() => {
+  if (rows.value.length === 0 || filled.value < rows.value.length) return '待填写'
+  return overall.value ? '外部校正通过' : '外部校正不通过'
+})
+const verdictClass = computed(() => {
+  if (rows.value.length === 0 || filled.value < rows.value.length) return 'pending'
+  return overall.value ? 'ok' : 'bad'
+})
+const progress = computed(() =>
+  rows.value.length === 0 ? 0 : Math.round((filled.value / rows.value.length) * 100)
+)
 
 onMounted(async () => {
   loading.value = true
@@ -107,6 +118,10 @@ function resultOf(row) {
   return { lower, upper, valueG, ok: qualified(valueG, row.nominalG, row.scale) }
 }
 
+function rowClass({ row }) {
+  return resultOf(row).ok === false ? 'row-bad' : ''
+}
+
 function pad(n) {
   return String(n).padStart(2, '0')
 }
@@ -179,6 +194,14 @@ async function save(submitAfter = false) {
       <span v-if="recordNo" class="note">记录编号 {{ recordNo }}</span>
     </div>
 
+    <div class="verdict" :class="verdictClass">
+      <div>
+        <div class="v-main">{{ verdictText }}</div>
+        <div class="v-sub">已填 {{ filled }} / {{ rows.length }} 次 · 限度按标称值 ±0.05% 自动计算</div>
+      </div>
+      <el-progress type="circle" :percentage="progress" :width="64" :status="verdictClass === 'bad' ? 'exception' : verdictClass === 'ok' ? 'success' : undefined" />
+    </div>
+
     <div class="card">
       <h2><span class="no">1</span>校验信息</h2>
       <div class="grid">
@@ -226,7 +249,7 @@ async function save(submitAfter = false) {
         <span class="no">2</span>九次称量
         <span class="hint">示值按天平显示填写，单位以天平显示为准；限度与判定统一用 g</span>
       </h2>
-      <el-table :data="rows" size="small">
+      <el-table :data="rows" size="small" :row-class-name="rowClass">
         <el-table-column label="量程" width="80" align="center">
           <template #default="{ row }">R{{ row.rangeSeq }}</template>
         </el-table-column>
@@ -276,7 +299,7 @@ async function save(submitAfter = false) {
       <h2><span class="no">3</span>结论与提交</h2>
       <div class="field">
         <label>备注</label>
-        <el-input v-model="form.remark" type="textarea" :rows="2" style="max-width: 640px" />
+        <el-input v-model="form.remark" type="textarea" :rows="2" style="max-width: 640px" placeholder="如无异常填“无”" />
       </div>
       <div class="actions">
         <el-button :loading="saving" @click="save(false)">保存草稿</el-button>
@@ -290,11 +313,30 @@ async function save(submitAfter = false) {
 
 <style scoped>
 .head { display: flex; align-items: baseline; gap: 14px; }
+.verdict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #dfe5ee;
+  border-left: 4px solid #b9c6db;
+  border-radius: 6px;
+  background: #fbfcfe;
+  padding: 12px 18px;
+  margin-bottom: 14px;
+}
+.verdict.ok { border-left-color: #1e8e5a; background: #f2faf5; }
+.verdict.bad { border-left-color: #c0392b; background: #fdf4f3; }
+.v-main { font-size: 16px; font-weight: 700; }
+.verdict.ok .v-main { color: #1e8e5a; }
+.verdict.bad .v-main { color: #c0392b; }
+.v-sub { font-size: 12px; color: #5c6b87; margin-top: 4px; }
+:deep(.row-bad td) { background: #fdf1f0 !important; }
 .grid { display: flex; flex-wrap: wrap; gap: 14px 26px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field.full { width: 100%; }
 .field label { font-size: 12.5px; color: #5c6b87; }
-.radios { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+.radios { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; font-size: 13px; }
 .radios span { color: #5c6b87; margin-left: 8px; }
 .radios span:first-child { margin-left: 0; }
 .actions { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; }

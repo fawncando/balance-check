@@ -57,6 +57,20 @@ async function submit() {
     </div>
 
     <div v-if="record">
+      <div class="verdict" :class="record.externalResult === '是' ? 'ok' : 'bad'">
+        <div>
+          <div class="v-main">{{ record.externalResult === '是' ? '外部校正通过' : '外部校正不通过' }}</div>
+          <div class="v-sub">{{ record.balanceCode }} · {{ record.calibrationTime }} · 检验人员 {{ record.inspectorName }}</div>
+        </div>
+        <el-tag
+          :type="statusMap[record.status]?.type"
+          :effect="record.status === 'SUBMITTED' ? 'dark' : 'light'"
+          size="large"
+        >
+          {{ statusMap[record.status]?.text }}
+        </el-tag>
+      </div>
+
       <div class="card">
         <h2>
           {{ record.recordNo }}
@@ -118,6 +132,21 @@ async function submit() {
 <style scoped>
 .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .head .page-title { margin: 0; }
+.verdict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #dfe5ee;
+  border-left: 4px solid #1e8e5a;
+  border-radius: 6px;
+  background: #f2faf5;
+  padding: 12px 18px;
+  margin-bottom: 14px;
+}
+.verdict.bad { border-left-color: #c0392b; background: #fdf4f3; }
+.v-main { font-size: 17px; font-weight: 700; color: #1e8e5a; }
+.verdict.bad .v-main { color: #c0392b; }
+.v-sub { font-size: 12px; color: #5c6b87; margin-top: 4px; }
 .kv { display: flex; flex-wrap: wrap; gap: 10px 28px; font-size: 13px; }
 .kv .k { color: #5c6b87; }
 .actions { display: flex; gap: 10px; align-items: center; }

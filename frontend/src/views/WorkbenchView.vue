@@ -191,7 +191,7 @@ function formatSize(bytes) {
         </el-table-column>
       </el-table>
       <div class="note" style="margin-top: 10px">
-        批次 3 只完成上传与存储。自动识别、读数确认与判定将在批次 4、5 接入，届时状态会从“已上传”推进到“待确认”。
+        校验记录、复核与查询已在批次 5、6 完成；自动识别（批次 4）接入后，视频状态会从“已上传”推进到“待确认”。
       </div>
     </div>
   </div>

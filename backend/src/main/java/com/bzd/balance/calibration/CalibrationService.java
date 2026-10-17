@@ -1,6 +1,7 @@
 package com.bzd.balance.calibration;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ public class CalibrationService {
         persistMeasurements(record.getId(), measurements);
         auditService.log(user.getId(), "CALIBRATION_CREATE", "CALIBRATION",
                 String.valueOf(record.getId()), record.getRecordNo(), ip);
-        return get(record.getId());
+        return get(record.getId(), user);
     }
 
     public CalibrationDtos.RecordView update(Long id,
@@ -105,7 +106,7 @@ public class CalibrationService {
         persistMeasurements(id, measurements);
         auditService.log(user.getId(), "CALIBRATION_UPDATE", "CALIBRATION",
                 String.valueOf(id), record.getRecordNo(), ip);
-        return get(id);
+        return get(id, user);
     }
 
     public CalibrationDtos.RecordView submit(Long id, SessionUser user, String ip) {
@@ -122,20 +123,42 @@ public class CalibrationService {
         }
         auditService.log(user.getId(), "CALIBRATION_SUBMIT", "CALIBRATION",
                 String.valueOf(id), record.getRecordNo(), ip);
-        return get(id);
+        return get(id, user);
     }
 
-    public CalibrationDtos.RecordView get(Long id) {
+    /** 记录详情：检验人员只能查看自己创建的记录，复核确认人员与管理员可以查看全部。 */
+    public CalibrationDtos.RecordView get(Long id, SessionUser user) {
         CalibrationDtos.RecordView view = calibrationMapper.findView(id);
         if (view == null) {
             throw new BizException(404, "记录不存在");
+        }
+        if (user.isInspector() && !user.getId().equals(view.getInspectorId())) {
+            throw new BizException(403, "只能查看自己创建的记录");
         }
         view.setMeasurements(calibrationMapper.findMeasurements(id));
         return view;
     }
 
-    public List<CalibrationDtos.RecordView> list() {
-        return calibrationMapper.findAll();
+    /** 记录查询：检验人员只看自己的记录，复核确认人员与管理员看全部。 */
+    public List<CalibrationDtos.RecordView> list(CalibrationDtos.Query query, SessionUser user) {
+        CalibrationDtos.Query condition = query == null ? new CalibrationDtos.Query() : query;
+        String status = trimToNull(condition.getStatus());
+        if (status != null) {
+            status = status.toUpperCase(java.util.Locale.ROOT);
+            if (!ReviewRules.isKnownStatus(status)) {
+                throw new BizException("记录状态取值不合法");
+            }
+        }
+        LocalDate dateFrom = condition.getDateFrom();
+        LocalDate dateTo = condition.getDateTo();
+        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+            throw new BizException("开始日期不能晚于结束日期");
+        }
+        Long inspectorId = user.isInspector() ? user.getId() : null;
+        return calibrationMapper.search(inspectorId, condition.getBalanceId(), status,
+                trimToNull(condition.getRecordNo()),
+                dateFrom == null ? null : dateFrom.atStartOfDay(),
+                dateTo == null ? null : dateTo.plusDays(1).atStartOfDay());
     }
 
     private List<CalibrationMeasurement> buildMeasurements(Calibration record,
@@ -215,5 +238,12 @@ public class CalibrationService {
 
     private String blankToDefault(String value) {
         return value == null || value.isBlank() ? "无" : value;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

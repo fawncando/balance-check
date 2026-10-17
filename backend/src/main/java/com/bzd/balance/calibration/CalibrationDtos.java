@@ -1,8 +1,11 @@
 package com.bzd.balance.calibration;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 public final class CalibrationDtos {
 
@@ -74,11 +77,46 @@ public final class CalibrationDtos {
         public void setMeasurements(List<MeasurementInput> measurements) { this.measurements = measurements; }
     }
 
+    /** 记录查询条件：按天平、状态、记录编号与日期段过滤，空值表示不限。 */
+    public static class Query {
+        private Long balanceId;
+        private String status;
+        private String recordNo;
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        private LocalDate dateFrom;
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        private LocalDate dateTo;
+
+        public Long getBalanceId() { return balanceId; }
+        public void setBalanceId(Long balanceId) { this.balanceId = balanceId; }
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+        public String getRecordNo() { return recordNo; }
+        public void setRecordNo(String recordNo) { this.recordNo = recordNo; }
+        public LocalDate getDateFrom() { return dateFrom; }
+        public void setDateFrom(LocalDate dateFrom) { this.dateFrom = dateFrom; }
+        public LocalDate getDateTo() { return dateTo; }
+        public void setDateTo(LocalDate dateTo) { this.dateTo = dateTo; }
+    }
+
+    /** 复核请求：result 取 APPROVED 或 REJECTED，退回时 comment 必填。 */
+    public static class ReviewRequest {
+        private String result;
+        private String comment;
+
+        public String getResult() { return result; }
+        public void setResult(String result) { this.result = result; }
+        public String getComment() { return comment; }
+        public void setComment(String comment) { this.comment = comment; }
+    }
+
     public static class RecordView {
         private Long id;
         private String recordNo;
         private Long balanceId;
         private String balanceCode;
+        private String balanceUniqueNo;
+        private String department;
         private LocalDateTime calibrationTime;
         private String status;
         private String externalResult;
@@ -86,8 +124,13 @@ public final class CalibrationDtos {
         private Boolean levelOk;
         private String internalCalibrationResult;
         private String remark;
+        private Long inspectorId;
         private String inspectorName;
         private LocalDateTime submittedAt;
+        private String reviewerName;
+        private LocalDateTime reviewedAt;
+        private String reviewResult;
+        private String reviewComment;
         private List<CalibrationMeasurement> measurements;
 
         public Long getId() { return id; }
@@ -98,6 +141,10 @@ public final class CalibrationDtos {
         public void setBalanceId(Long balanceId) { this.balanceId = balanceId; }
         public String getBalanceCode() { return balanceCode; }
         public void setBalanceCode(String balanceCode) { this.balanceCode = balanceCode; }
+        public String getBalanceUniqueNo() { return balanceUniqueNo; }
+        public void setBalanceUniqueNo(String balanceUniqueNo) { this.balanceUniqueNo = balanceUniqueNo; }
+        public String getDepartment() { return department; }
+        public void setDepartment(String department) { this.department = department; }
         public LocalDateTime getCalibrationTime() { return calibrationTime; }
         public void setCalibrationTime(LocalDateTime calibrationTime) { this.calibrationTime = calibrationTime; }
         public String getStatus() { return status; }
@@ -112,10 +159,20 @@ public final class CalibrationDtos {
         public void setInternalCalibrationResult(String value) { this.internalCalibrationResult = value; }
         public String getRemark() { return remark; }
         public void setRemark(String remark) { this.remark = remark; }
+        public Long getInspectorId() { return inspectorId; }
+        public void setInspectorId(Long inspectorId) { this.inspectorId = inspectorId; }
         public String getInspectorName() { return inspectorName; }
         public void setInspectorName(String inspectorName) { this.inspectorName = inspectorName; }
         public LocalDateTime getSubmittedAt() { return submittedAt; }
         public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
+        public String getReviewerName() { return reviewerName; }
+        public void setReviewerName(String reviewerName) { this.reviewerName = reviewerName; }
+        public LocalDateTime getReviewedAt() { return reviewedAt; }
+        public void setReviewedAt(LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
+        public String getReviewResult() { return reviewResult; }
+        public void setReviewResult(String reviewResult) { this.reviewResult = reviewResult; }
+        public String getReviewComment() { return reviewComment; }
+        public void setReviewComment(String reviewComment) { this.reviewComment = reviewComment; }
         public List<CalibrationMeasurement> getMeasurements() { return measurements; }
         public void setMeasurements(List<CalibrationMeasurement> measurements) { this.measurements = measurements; }
     }

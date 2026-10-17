@@ -27,6 +27,10 @@ public class SessionUser {
         return "REVIEWER".equals(role);
     }
 
+    public boolean isInspector() {
+        return "INSPECTOR".equals(role);
+    }
+
     public Long getId() {
         return id;
     }

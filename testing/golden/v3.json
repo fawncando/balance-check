@@ -1,0 +1,10 @@
+{
+  "video": "63bb2c36627c4e7efdfa6cf7a85bddec.mp4",
+  "personCard": null,
+  "balanceCode": null,
+  "displayUnit": "g",
+  "verified": false,
+  "note": "待人工标注：这条是含错误的样本，需要记录错误发生在第几次称量以及错误类型",
+  "ranges": [],
+  "verdict": null
+}

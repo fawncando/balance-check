@@ -1,0 +1,68 @@
+:root {
+  --ink: #1f2a44;
+  --muted: #5c6b87;
+  --line: #dfe5ee;
+  --brand: #1f4e8c;
+  --brand-dark: #163a69;
+  --bg: #f4f6fa;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "微软雅黑", "SimHei", sans-serif;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+
+.card h2 {
+  font-size: 14px;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card h2 .no {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: auto;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.el-table { font-size: 13px; }
+.el-table th.el-table__cell { background: #f2f5fa; color: #43536f; }

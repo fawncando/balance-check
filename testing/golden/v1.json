@@ -1,0 +1,34 @@
+{
+  "video": "13d9ccc8268f3f6c7d1dfd33e9716159.mp4",
+  "personCard": null,
+  "balanceCode": "F002",
+  "displayUnit": "g",
+  "verified": false,
+  "note": "双量程：120 g 量程用 100 g 砝码称 3 次；40 g 量程用 20 g、2 g 砝码各称 3 次。设备显示屏标注 41 g，甲方确认以天平清单为准，按 40 g 处理。",
+  "ranges": [
+    {
+      "seq": 1,
+      "maxCapacityG": 120,
+      "divisionMg": 0.1,
+      "measurements": [
+        { "weightSeq": 1, "nominalG": 100, "measureSeq": 1, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null },
+        { "weightSeq": 1, "nominalG": 100, "measureSeq": 2, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null },
+        { "weightSeq": 1, "nominalG": 100, "measureSeq": 3, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null }
+      ]
+    },
+    {
+      "seq": 2,
+      "maxCapacityG": 40,
+      "divisionMg": 0.01,
+      "measurements": [
+        { "weightSeq": 1, "nominalG": 20, "measureSeq": 1, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null },
+        { "weightSeq": 1, "nominalG": 20, "measureSeq": 2, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null },
+        { "weightSeq": 1, "nominalG": 20, "measureSeq": 3, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null },
+        { "weightSeq": 2, "nominalG": 2, "measureSeq": 1, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null },
+        { "weightSeq": 2, "nominalG": 2, "measureSeq": 2, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null },
+        { "weightSeq": 2, "nominalG": 2, "measureSeq": 3, "displayValue": null, "displayUnit": "g", "valueG": null, "measuredAt": null, "qualified": null }
+      ]
+    }
+  ],
+  "verdict": null
+}

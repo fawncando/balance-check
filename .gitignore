@@ -1,0 +1,18 @@
+# 构建产物
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# 本地运行数据
+uploads/
+*.log
+
+# 工具与缓存
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+.venv/
+
+# 本地配置覆盖
+application-local.yml

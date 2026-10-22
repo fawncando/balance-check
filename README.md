@@ -2,7 +2,7 @@
 
 第 8 组课程设计。需求见《第8组天平校验视频分析系统项目需求规格说明书》。
 
-当前进度：批次 1 至 3 已完成，批次 5（记录与判定）、批次 6（复核与查询）、批次 7（完善优化）已完成，批次 4（识别原型）进行中——稳定读数段与七段数字框已能定位，读数解码尚未达到可用准确率。
+当前进度：批次 1 至 3 已完成，批次 5（记录与判定）、批次 6（复核与查询）、批次 7（完善优化）、批次 8（测试与交付）已完成，批次 4（识别原型）进行中——稳定读数段与七段数字框已能定位，读数解码尚未达到可用准确率。
 
 ## 一、目录结构
 
@@ -12,9 +12,10 @@ balance-check/
 ├─ frontend/      Vue 3 + Vite + Element Plus 前端
 ├─ analysis/      Python 识别原型（OpenCV 七段码定位与解码、稳定读数段）
 ├─ database/      schema.sql 建表、seed.sql 初始化数据
-├─ docs/          系统设计说明书、运行截图
+├─ docs/          设计说明书、部署手册、测试报告、交付清单、运行截图
 ├─ testing/       金标准标注与识别评测脚本
-└─ scripts/       冒烟测试（批次 3、5、6、7）与独立校验（复核规则、记录表渲染、天平清单规则）
+├─ scripts/       冒烟测试、独立校验、环境检查、建库、启停、打包与交付校验
+└─ dist/          交付包（构建产物，不入库）
 ```
 
 ## 二、环境要求
@@ -111,7 +112,15 @@ python -m venv .venv
 - 记录表模板：管理员按名称维护多个版本，同一模板同一时间只启用一个版本，启用新版本会自动停用旧版本
 - 侧栏菜单按角色过滤：新建记录只对检验人员与管理员显示，记录表模板与操作日志只对管理员显示
 
-### 6.7 识别原型（批次 4，进行中）
+### 6.7 测试与交付（批次 8）
+
+- 后端配置外部化：端口、数据库连接、上传目录、上传上限都可用环境变量覆盖，换机器不必改文件
+- 新增运维脚本：环境检查、数据库初始化、后端启停（含健康检查等待与日志落盘）
+- 新增交付脚本：一键打包（后端 jar + 前端 dist + SQL + 文档 + 脚本 + VERSION）与交付包校验
+- 新增一键测试 `scripts/test-all.ps1`：后端编译、两套独立校验、前端单元测试，后端在线时自动追加接口冒烟
+- 补齐交付文档：部署手册、测试报告、交付清单；全部 PowerShell 脚本改为 UTF-8 BOM，Windows PowerShell 5.1 可直接执行
+
+### 6.8 识别原型（批次 4，进行中）
 
 ffmpeg 抽帧 + 稳定读数段检测已在样本视频上跑通；OpenCV 能定位显示屏中的七段数字框，0.0000 帧上 5 个数字框有 4 个解码正确。称量帧的多位数字配对与单位识别仍需校准。
 
@@ -147,6 +156,7 @@ ffmpeg 抽帧 + 稳定读数段检测已在样本视频上跑通；OpenCV 能定
 ## 八、测试
 
 ```powershell
+pwsh -File scripts\test-all.ps1            # 一键：后端编译 + 独立校验 + 前端测试（后端在线时含接口冒烟）
 pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、天平、上传（16 项）
 pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（13 项）
 pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、导出（34 项）
@@ -158,6 +168,17 @@ node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test
 ```
 
 浏览器端另有 8 项 Playwright 检查（九行生成、实时判定、提交、详情、列表、控制台），截图在 `docs/screenshots`。
+
+交付相关脚本：
+
+```powershell
+pwsh -File scripts\check-environment.ps1                    # 环境检查（JDK/MySQL/端口/磁盘）
+pwsh -File scripts\init-database.ps1                        # 建库与初始化数据
+pwsh -File scripts\start-backend.ps1                       # 启动后端并等待健康检查
+pwsh -File scripts\stop-backend.ps1                        # 停止后端
+pwsh -File scripts\package-release.ps1                      # 生成 dist/balance-check-<版本> 与 zip
+pwsh -File scripts\verify-release.ps1 -Path dist\balance-check-0.1.0-SNAPSHOT
+```
 
 已知问题：本机 Maven 的 testCompile 无法解析主代码包（离线仓库缺 JUnit 与 surefire 依赖），判定、复核与天平清单规则暂用独立 runner 验证（`scripts/batch6-unit-check.ps1`、`scripts/batch7-unit-check.ps1`），JUnit 测试待恢复；批次 4 的读数解码准确率尚未达标。
 
@@ -172,4 +193,17 @@ node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test
 | 5 | 记录与判定 | 已完成（前后端联调通过） |
 | 6 | 复核与查询 | 已完成（复核、退回、解锁、查询、记录表导出） |
 | 7 | 完善优化 | 已完成（清单维护、操作日志、记录表模板） |
-| 8 | 测试与交付 | 待开始 |
+| 8 | 测试与交付 | 已完成（配置外部化、运维脚本、交付文档与一键测试） |
+
+## 十、交付与部署
+
+部署步骤、环境变量、Nginx 配置与常见问题见 [部署手册](docs/部署手册.md)；测试范围、用例统计与缺陷记录见 [测试报告](docs/测试报告.md)；验收步骤与已知限制见 [交付清单](docs/交付清单.md)。
+
+最快路径：
+
+```powershell
+pwsh -File scripts\check-environment.ps1     # 1. 环境检查
+pwsh -File scripts\init-database.ps1         # 2. 建库与初始化数据
+pwsh -File scripts\start-backend.ps1         # 3. 启动后端并做健康检查
+pwsh -File scripts\test-all.ps1              # 4. 一键测试（接口组需后端在线）
+```

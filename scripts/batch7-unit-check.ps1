@@ -1,4 +1,4 @@
-# 批次 7 独立校验：天平清单校验规则（BalanceRulesCheck）
+﻿# 批次 7 独立校验：天平清单校验规则（BalanceRulesCheck）
 # 不依赖数据库与 Maven 测试插件；需先编译后端：cd backend; .\mvnw.cmd -o -DskipTests compile
 # 用法：pwsh -File scripts\batch7-unit-check.ps1 [-JavaHome <JDK 目录>] [-Classes <后端编译产物>]
 param(

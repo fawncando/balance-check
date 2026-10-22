@@ -1,4 +1,4 @@
-# 批次 6 独立校验：复核规则（ReviewRulesCheck）与记录表渲染（RecordSheetCheck）
+﻿# 批次 6 独立校验：复核规则（ReviewRulesCheck）与记录表渲染（RecordSheetCheck）
 # 不依赖数据库与 Maven 测试插件；需先编译后端：cd backend; .\mvnw.cmd -o -DskipTests compile
 # 用法：pwsh -File scripts\batch6-unit-check.ps1 [-JavaHome <JDK 目录>] [-Classes <后端编译产物>]
 param(

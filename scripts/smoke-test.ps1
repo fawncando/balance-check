@@ -1,4 +1,4 @@
-# 批次 3 冒烟测试：登录、权限、天平清单、视频上传与删除
+﻿# 批次 3 冒烟测试：登录、权限、天平清单、视频上传与删除
 # 用法：pwsh -File scripts/smoke-test.ps1 [-BaseUrl http://localhost:8081] [-VideoPath D:\path\video.mp4]
 param(
     [string]$BaseUrl = 'http://localhost:8081',

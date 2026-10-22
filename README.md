@@ -2,19 +2,19 @@
 
 第 8 组课程设计。需求见《第8组天平校验视频分析系统项目需求规格说明书》。
 
-当前进度：批次 1 至 3 已完成，批次 5（记录与判定）、批次 6（复核与查询）已完成，批次 4（识别原型）进行中——稳定读数段与七段数字框已能定位，读数解码尚未达到可用准确率。
+当前进度：批次 1 至 3 已完成，批次 5（记录与判定）、批次 6（复核与查询）、批次 7（完善优化）已完成，批次 4（识别原型）进行中——稳定读数段与七段数字框已能定位，读数解码尚未达到可用准确率。
 
 ## 一、目录结构
 
 ```text
 balance-check/
-├─ backend/       Spring Boot 3.3.5 后端（登录、上传、天平清单、记录与判定）
+├─ backend/       Spring Boot 3.3.5 后端（登录、上传、天平清单、记录与判定、复核、基础数据维护）
 ├─ frontend/      Vue 3 + Vite + Element Plus 前端
 ├─ analysis/      Python 识别原型（OpenCV 七段码定位与解码、稳定读数段）
 ├─ database/      schema.sql 建表、seed.sql 初始化数据
 ├─ docs/          系统设计说明书、运行截图
 ├─ testing/       金标准标注与识别评测脚本
-└─ scripts/       冒烟测试（批次 3、5、6）与独立校验（复核规则、记录表渲染）
+└─ scripts/       冒烟测试（批次 3、5、6、7）与独立校验（复核规则、记录表渲染、天平清单规则）
 ```
 
 ## 二、环境要求
@@ -104,7 +104,14 @@ python -m venv .venv
 - 记录表导出返回可直接打印的 A4 页面，浏览器“另存为 PDF”即可归档，仅复核确认人员与管理员可用
 - 记录详情展示复核结论、复核意见与九次称量偏差曲线（相对标称值的百分比，允许带 ±0.05%）
 
-### 6.6 识别原型（批次 4，进行中）
+### 6.6 完善优化（批次 7）
+
+- 天平清单维护：复核确认人员与管理员可新增、编辑天平，维护量程上限、分度值与砝码组，停用后不再出现在新建记录的备选清单
+- 操作日志：管理员按操作类型、操作人与日期段分页查询 audit_log，日志带出操作人姓名
+- 记录表模板：管理员按名称维护多个版本，同一模板同一时间只启用一个版本，启用新版本会自动停用旧版本
+- 侧栏菜单按角色过滤：新建记录只对检验人员与管理员显示，记录表模板与操作日志只对管理员显示
+
+### 6.7 识别原型（批次 4，进行中）
 
 ffmpeg 抽帧 + 稳定读数段检测已在样本视频上跑通；OpenCV 能定位显示屏中的七段数字框，0.0000 帧上 5 个数字框有 4 个解码正确。称量帧的多位数字配对与单位识别仍需校准。
 
@@ -116,6 +123,9 @@ ffmpeg 抽帧 + 稳定读数段检测已在样本视频上跑通；OpenCV 能定
 | POST | /api/auth/logout | 退出 |
 | GET | /api/auth/me | 当前用户 |
 | GET | /api/balances | 天平清单（含量程与砝码） |
+| POST | /api/balances | 新增天平（复核人员、管理员） |
+| PUT | /api/balances/{id} | 修改天平与量程、启用停用（复核人员、管理员） |
+| GET | /api/weight-sets | 砝码组与盒内砝码 |
 | POST | /api/videos | 上传视频 |
 | GET | /api/videos | 视频列表 |
 | DELETE | /api/videos/{id} | 删除未识别的视频 |
@@ -127,6 +137,11 @@ ffmpeg 抽帧 + 稳定读数段检测已在样本视频上跑通；OpenCV 能定
 | GET | /api/calibrations | 记录查询（balanceId、status、recordNo、dateFrom、dateTo） |
 | GET | /api/calibrations/{id} | 记录详情 |
 | GET | /api/calibrations/export?id= | 记录表打印页（HTML，复核人员） |
+| GET | /api/logs | 操作日志（管理员，分页） |
+| GET | /api/users | 用户列表（管理员） |
+| GET | /api/templates | 记录表模板版本（管理员） |
+| POST | /api/templates | 新增模板版本（管理员） |
+| PUT | /api/templates/{id}/enabled | 启用或停用模板版本（管理员） |
 | GET | /api/system/health | 健康检查与存储容量 |
 
 ## 八、测试
@@ -136,13 +151,15 @@ pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、天平
 pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（13 项）
 pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、导出（34 项）
 pwsh -File scripts\batch6-unit-check.ps1   # 复核规则与记录表渲染（15 项，不依赖数据库）
+pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
+pwsh -File scripts\batch7-unit-check.ps1   # 天平清单校验规则（8 项，不依赖数据库）
 node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs
                                           # 前端换算与复核状态（12 项，不依赖 npm 安装）
 ```
 
 浏览器端另有 8 项 Playwright 检查（九行生成、实时判定、提交、详情、列表、控制台），截图在 `docs/screenshots`。
 
-已知问题：本机 Maven 的 testCompile 无法解析主代码包（离线仓库缺 JUnit 与 surefire 依赖），判定与复核规则暂用独立 runner 验证（`scripts/batch6-unit-check.ps1`），JUnit 测试待恢复；批次 4 的读数解码准确率尚未达标。
+已知问题：本机 Maven 的 testCompile 无法解析主代码包（离线仓库缺 JUnit 与 surefire 依赖），判定、复核与天平清单规则暂用独立 runner 验证（`scripts/batch6-unit-check.ps1`、`scripts/batch7-unit-check.ps1`），JUnit 测试待恢复；批次 4 的读数解码准确率尚未达标。
 
 ## 九、批次进度
 
@@ -154,5 +171,5 @@ node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test
 | 4 | 识别原型 | 进行中（稳定段与七段定位可用，解码待校准） |
 | 5 | 记录与判定 | 已完成（前后端联调通过） |
 | 6 | 复核与查询 | 已完成（复核、退回、解锁、查询、记录表导出） |
-| 7 | 完善优化 | 待开始 |
+| 7 | 完善优化 | 已完成（清单维护、操作日志、记录表模板） |
 | 8 | 测试与交付 | 待开始 |

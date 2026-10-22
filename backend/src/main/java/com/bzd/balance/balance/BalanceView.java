@@ -20,6 +20,7 @@ public class BalanceView {
         private Integer seqNo;
         private BigDecimal maxCapacityG;
         private BigDecimal divisionMg;
+        private Long weightSetId;
         private String weightSetNo;
         private List<BigDecimal> weights = new ArrayList<>();
 
@@ -45,6 +46,14 @@ public class BalanceView {
 
         public void setDivisionMg(BigDecimal divisionMg) {
             this.divisionMg = divisionMg;
+        }
+
+        public Long getWeightSetId() {
+            return weightSetId;
+        }
+
+        public void setWeightSetId(Long weightSetId) {
+            this.weightSetId = weightSetId;
         }
 
         public String getWeightSetNo() {

@@ -3,24 +3,41 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import {
-  DataAnalysis, Document, EditPen, Files, Monitor, SwitchButton, View
+  DataAnalysis, Document, EditPen, Files, Monitor, SwitchButton, Tickets, View
 } from '@element-plus/icons-vue'
 import { auth, logout, roleLabel } from '../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 
-const menus = [
-  { index: '/workbench', title: '检验工作台', icon: Monitor },
-  { index: '/records', title: '校验记录查询', icon: Document },
-  { index: '/calibrations/new', title: '新建校验记录', icon: EditPen },
-  { index: '/reviews', title: '复核工作台', icon: View },
-  { index: '/balances', title: '天平清单', icon: Files },
-  { index: '/logs', title: '操作日志', icon: DataAnalysis }
+const groups = [
+  {
+    title: '校验业务',
+    items: [
+      { index: '/workbench', title: '检验工作台', icon: Monitor },
+      { index: '/records', title: '校验记录查询', icon: Document },
+      { index: '/calibrations/new', title: '新建校验记录', icon: EditPen, roles: ['INSPECTOR', 'ADMIN'] },
+      { index: '/reviews', title: '复核工作台', icon: View }
+    ]
+  },
+  {
+    title: '基础数据',
+    items: [
+      { index: '/balances', title: '天平清单', icon: Files },
+      { index: '/templates', title: '记录表模板', icon: Tickets, roles: ['ADMIN'] },
+      { index: '/logs', title: '操作日志', icon: DataAnalysis, roles: ['ADMIN'] }
+    ]
+  }
 ]
 
 const active = computed(() => route.path)
 const user = computed(() => auth.user)
+const visibleGroups = computed(() => groups
+  .map((group) => ({
+    title: group.title,
+    items: group.items.filter((item) => !item.roles || item.roles.includes(user.value?.role))
+  }))
+  .filter((group) => group.items.length > 0))
 
 async function onLogout() {
   await ElMessageBox.confirm('确定退出登录吗？', '退出登录', { type: 'warning' })
@@ -44,23 +61,18 @@ async function onLogout() {
     </header>
     <div class="body">
       <aside class="side">
-        <div class="group">校验业务</div>
-        <el-menu :default-active="active" router class="menu">
-          <el-menu-item v-for="item in menus.slice(0, 4)" :key="item.index" :index="item.index">
-            <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.title }}</span>
-          </el-menu-item>
-        </el-menu>
-        <div class="group">基础数据</div>
-        <el-menu :default-active="active" router class="menu">
-          <el-menu-item v-for="item in menus.slice(4)" :key="item.index" :index="item.index">
-            <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.title }}</span>
-          </el-menu-item>
-        </el-menu>
+        <template v-for="group in visibleGroups" :key="group.title">
+          <div class="group">{{ group.title }}</div>
+          <el-menu :default-active="active" router class="menu">
+            <el-menu-item v-for="item in group.items" :key="item.index" :index="item.index">
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.title }}</span>
+            </el-menu-item>
+          </el-menu>
+        </template>
         <div class="version">
-          批次 6 · 复核与查询<br />
-          记录查询 / 复核 / 记录表导出
+          批次 7 · 完善优化<br />
+          清单维护 / 记录表模板 / 操作日志
         </div>
       </aside>
       <main class="main">

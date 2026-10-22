@@ -1,4 +1,4 @@
-# 批次 5 冒烟测试：记录创建、判定、修改、提交锁定、权限、双量程
+﻿# 批次 5 冒烟测试：记录创建、判定、修改、提交锁定、权限、双量程
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'

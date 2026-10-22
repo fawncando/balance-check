@@ -2,10 +2,13 @@
 backend/target/
 frontend/dist/
 frontend/node_modules/
+dist/
 
 # 本地运行数据
 uploads/
+logs/
 *.log
+*.pid
 
 # 工具与缓存
 .idea/

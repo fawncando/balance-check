@@ -15,7 +15,8 @@ const routes = [
       { path: 'calibrations/:id/edit', name: 'calibrationEdit', component: () => import('../views/CalibrationFormView.vue') },
       { path: 'reviews', name: 'reviews', component: () => import('../views/ReviewView.vue') },
       { path: 'balances', name: 'balances', component: () => import('../views/BalancesView.vue') },
-      { path: 'logs', name: 'logs', component: () => import('../views/PlaceholderView.vue'), props: { title: '操作日志', batch: '第 7 批次' } }
+      { path: 'templates', name: 'templates', component: () => import('../views/TemplatesView.vue') },
+      { path: 'logs', name: 'logs', component: () => import('../views/LogsView.vue') }
     ]
   }
 ]

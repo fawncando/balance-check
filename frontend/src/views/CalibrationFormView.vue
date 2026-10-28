@@ -45,7 +45,7 @@ onMounted(async () => {
     const id = route.params.id
     if (id) {
       const record = await http.get(`/calibrations/${id}`)
-      applyRecord(record)
+      await applyRecord(record)
     } else {
       balanceId.value = route.query.balanceId ? Number(route.query.balanceId) : balances.value[0]?.id || null
       if (currentBalance.value) buildRows(currentBalance.value)
@@ -79,10 +79,19 @@ function buildRows(balance) {
   }
 }
 
-function applyRecord(record) {
+async function applyRecord(record) {
   recordId.value = record.id
   recordNo.value = record.recordNo
   balanceId.value = record.balanceId
+  // 天平可能已被停用而不再出现在清单里，此时按编号补查详情，保证分度值与量程可回显
+  if (!balances.value.some((item) => item.id === record.balanceId)) {
+    try {
+      const balance = await http.get(`/balances/${record.balanceId}`)
+      balances.value = [...balances.value, balance]
+    } catch {
+      balances.value = balances.value
+    }
+  }
   calibrationTime.value = new Date(record.calibrationTime)
   form.cleanOk = record.cleanOk ?? true
   form.levelOk = record.levelOk ?? true

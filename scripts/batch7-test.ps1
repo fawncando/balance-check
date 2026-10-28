@@ -1,4 +1,4 @@
-# 批次 7 冒烟测试：天平清单维护、操作日志查询、记录表模板与权限
+﻿# 批次 7 冒烟测试：天平清单维护、操作日志查询、记录表模板与权限
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'

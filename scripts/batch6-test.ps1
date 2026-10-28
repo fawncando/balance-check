@@ -1,4 +1,4 @@
-# 批次 6 冒烟测试：复核通过/退回/解锁、按天平与日期段查询、记录表导出与权限
+﻿# 批次 6 冒烟测试：复核通过/退回/解锁、按天平与日期段查询、记录表导出与权限
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'

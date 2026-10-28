@@ -1,21 +1,24 @@
+# 天平校验视频分析系统 后端配置
+# 数据库与存储路径都可通过环境变量覆盖，交付到新机器时不必改文件：
+#   SERVER_PORT、DB_URL、DB_USERNAME、DB_PASSWORD、APP_UPLOAD_DIR
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
   servlet:
     session:
-      timeout: 8h
+      timeout: ${SESSION_TIMEOUT:8h}
 
 spring:
   application:
     name: balance-check
   datasource:
-    url: jdbc:mysql://localhost:3306/balance_check?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: ${DB_URL:jdbc:mysql://localhost:3306/balance_check?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
   servlet:
     multipart:
-      max-file-size: 500MB
-      max-request-size: 520MB
+      max-file-size: ${UPLOAD_MAX_FILE:500MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST:520MB}
 
 mybatis:
   configuration:
@@ -23,4 +26,4 @@ mybatis:
 
 app:
   # 视频体积大，放在数据盘；可用环境变量 APP_UPLOAD_DIR 覆盖
-  upload-dir: D:/develop/balance-check-data/uploads
+  upload-dir: ${APP_UPLOAD_DIR:D:/develop/balance-check-data/uploads}

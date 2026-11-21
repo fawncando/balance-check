@@ -51,6 +51,7 @@ Check '建表脚本 schema.sql' (Test-Path (Join-Path $root 'database\schema.sql
 Check '初始化数据 seed.sql' (Test-Path (Join-Path $root 'database\seed.sql'))
 Check '数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrations\001_recognition_enhancements.sql'))
 Check '视频识别入口 analyze_video.py' (Test-Path (Join-Path $root 'analysis\analyze_video.py'))
+Check '手机入口二维码脚本 generate_qr.py' (Test-Path (Join-Path $root 'analysis\generate_qr.py'))
 Check '视频识别依赖 requirements.txt' (Test-Path (Join-Path $root 'analysis\requirements.txt'))
 Check '视频识别档案 profiles.json' (Test-Path (Join-Path $root 'analysis\profiles.json'))
 $templateDir = Join-Path $root 'analysis\templates'

@@ -27,12 +27,16 @@ mybatis:
 app:
   # 视频体积大，放在数据盘；可用环境变量 APP_UPLOAD_DIR 覆盖
   upload-dir: ${APP_UPLOAD_DIR:D:/develop/balance-check-data/uploads}
+  # 手机入口：生产环境建议设置为 http://内网域名或电脑IP（不要带 /mobile）
+  public-url: ${APP_PUBLIC_URL:}
+  mobile-port: ${APP_MOBILE_PORT:5173}
   recognition:
     # 部署时安装 Python 依赖并把本项指向实际 python；开发机可指向 analysis/.venv
     python-command: ${APP_RECOGNITION_PYTHON:python}
     script-path: ${APP_RECOGNITION_SCRIPT:../analysis/analyze_video.py}
     ffmpeg-command: ${APP_RECOGNITION_FFMPEG:ffmpeg}
     timeout-seconds: ${APP_RECOGNITION_TIMEOUT:600}
+    qr-script: ${APP_RECOGNITION_QR_SCRIPT:../analysis/generate_qr.py}
     device-profiles:
       F001:
         - f001

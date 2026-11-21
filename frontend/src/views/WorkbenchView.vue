@@ -15,6 +15,8 @@ const uploading = ref(false)
 const analyzingId = ref(null)
 const progress = ref(0)
 const loading = ref(false)
+const mobileEntry = ref(null)
+const mobileQrVersion = ref(Date.now())
 
 const statusMap = {
   UPLOADED: { text: '已上传', type: 'info' },
@@ -31,8 +33,26 @@ const balanceOptions = computed(() =>
 )
 
 onMounted(async () => {
-  await Promise.all([loadBalances(), loadVideos()])
+  await Promise.all([loadBalances(), loadVideos(), loadMobileEntry()])
 })
+
+async function loadMobileEntry() {
+  try {
+    mobileEntry.value = await http.get('/system/mobile-entry')
+  } catch (err) {
+    ElMessage.error(err.message)
+  }
+}
+
+async function copyMobileLink() {
+  if (!mobileEntry.value?.url) return
+  try {
+    await navigator.clipboard.writeText(mobileEntry.value.url)
+    ElMessage.success('手机上传地址已复制')
+  } catch {
+    ElMessage.info(mobileEntry.value.url)
+  }
+}
 
 async function loadBalances() {
   try {
@@ -167,6 +187,20 @@ function formatSize(bytes) {
   <div>
     <h1 class="page-title">检验工作台</h1>
 
+    <div v-if="mobileEntry" class="card mobile-entry-card">
+      <div class="mobile-copy">
+        <div class="mobile-kicker">手机上传入口</div>
+        <h2>扫码在手机上上传校验视频</h2>
+        <p>手机与电脑连接同一局域网。手机只负责上传，识别和记录保存在电脑端。</p>
+        <div class="mobile-url">{{ mobileEntry.url }}</div>
+        <el-button @click="copyMobileLink">复制手机地址</el-button>
+      </div>
+      <div class="mobile-qr">
+        <img :src="`/api/system/mobile-entry/qr?v=${mobileQrVersion}`" alt="手机上传入口二维码" />
+        <span>微信或浏览器扫码</span>
+      </div>
+    </div>
+
     <div class="card">
       <h2><span class="no">1</span>导入校验视频<span class="hint">视频由检验人员按称量 SOP 拍摄完成后在手机端上传，系统从视频文件开始处理</span></h2>
 
@@ -277,4 +311,19 @@ function formatSize(bytes) {
   background: #fbfcfe;
 }
 .file-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.mobile-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: linear-gradient(120deg, #f5f9ff 0%, #eaf3ff 100%);
+  border-color: #c7d9f1;
+}
+.mobile-kicker { color: #1f5c9d; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.mobile-copy h2 { margin: 5px 0 6px; font-size: 17px; }
+.mobile-copy p { margin: 0 0 10px; color: #60718c; font-size: 12.5px; }
+.mobile-url { font-family: Consolas, monospace; color: #245b94; font-size: 12px; margin-bottom: 10px; word-break: break-all; }
+.mobile-qr { flex: 0 0 132px; text-align: center; }
+.mobile-qr img { display: block; width: 132px; height: 132px; border: 6px solid #fff; border-radius: 10px; background: #fff; }
+.mobile-qr span { display: block; margin-top: 5px; color: #7c8ba1; font-size: 10.5px; }
 </style>

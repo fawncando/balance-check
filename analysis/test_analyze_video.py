@@ -12,6 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from analyze_video import PROFILES, detect_person_card, nominal_of, sartorius_value  # noqa: E402
+from generate_qr import generate as generate_qr  # noqa: E402
 
 
 class SartoriusValueTest(unittest.TestCase):
@@ -50,6 +51,14 @@ class SartoriusValueTest(unittest.TestCase):
             path = os.path.join(tmp, "frame.jpg")
             cv2.imwrite(path, image)
             self.assertEqual(detect_person_card([path]), "RY-001")
+
+    def test_mobile_entry_qr_round_trip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mobile.png")
+            value = "http://192.168.1.20:5173/mobile"
+            generate_qr(value, path, 300)
+            decoded, _, _ = cv2.QRCodeDetector().detectAndDecode(cv2.imread(path))
+            self.assertEqual(decoded, value)
 
 
 if __name__ == "__main__":

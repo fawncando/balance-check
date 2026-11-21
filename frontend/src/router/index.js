@@ -3,6 +3,7 @@ import { auth, restore } from '../stores/auth'
 
 const routes = [
   { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },
+  { path: '/mobile', name: 'mobileUpload', component: () => import('../views/MobileUploadView.vue') },
   {
     path: '/',
     component: () => import('../layouts/MainLayout.vue'),

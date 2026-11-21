@@ -124,6 +124,7 @@ python -m venv .venv
 
 - 上传成功后前端自动调用 `POST /api/videos/{id}/analyze`，状态按 `UPLOADED → ANALYZING → ANALYZED/FAILED` 推进
 - 识别任务进入后台线程池，接口约 100 ms 返回 `ANALYZING`，前端每秒轮询视频状态
+- 检验工作台显示手机上传入口二维码；手机打开 `/mobile` 专用页面，选择或拍摄视频后直接传到电脑
 - F001 使用 Mettler 图形屏模板；F002 自动比较 `f002a` 与 `f002b` 两套显示档案，选择九次有效读数更多的结果
 - 设备与候选档案通过 `app.recognition.device-profiles` 配置，新增设备只需增加模板、`profiles.json` 和映射
 - 使用 OpenCV QRCodeDetector 识别视频中人员卡；卡号与上传账号 `card_no` 一致才标记通过，出现不一致时识别失败且不建单
@@ -163,6 +164,8 @@ python -m venv .venv
 | POST | /api/templates | 新增模板版本（管理员） |
 | PUT | /api/templates/{id}/enabled | 启用或停用模板版本（管理员） |
 | GET | /api/system/health | 健康检查与存储容量 |
+| GET | /api/system/mobile-entry | 手机上传局域网地址 |
+| GET | /api/system/mobile-entry/qr | 手机入口二维码 PNG |
 
 ## 八、测试
 
@@ -175,7 +178,7 @@ pwsh -File scripts\batch6-unit-check.ps1   # 复核规则与记录表渲染（15
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
 pwsh -File scripts\batch7-unit-check.ps1   # 天平清单校验规则（8 项，不依赖数据库）
 analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
-                                           # 小数点、g/mg、设备档案与人员 QR（7 项）
+                                           # 小数点、g/mg、设备档案、人员 QR 与手机入口 QR（8 项）
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
                                            # 三段样本视频识别回归（3 个用例）
 node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs
@@ -197,6 +200,8 @@ pwsh -File scripts\package-release.ps1                      # 生成 dist/balanc
 pwsh -File scripts\verify-release.ps1 -Path dist\balance-check-0.1.0-SNAPSHOT
 pwsh -File scripts\stress-test.ps1 -BaseUrl http://localhost:8081 -VideoDir D:\videos
                                            # 3 路并发识别 + 6 路并发提交/复核
+pwsh -File scripts\mobile-acceptance.ps1 -Port 9222 -AppUrl http://<电脑IP>:5175
+                                           # 移动视口 + 局域网地址验收
 ```
 
 已知限制：本机 Maven 的 testCompile 仍使用独立 runner 验证；识别模板覆盖 F001、F002 的现有固定机位，更换机位或新设备需补标定模板与设备映射。当前仍为单实例内存 Session，多实例部署需要共享会话。

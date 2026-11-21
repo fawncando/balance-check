@@ -1,0 +1,18 @@
+{
+  "video": "Balance_2.mp4",
+  "balanceCode": "F001",
+  "displayType": "Mettler Toledo 图形屏",
+  "unit": "g",
+  "weighings": [
+    { "weightSeq": 1, "measureSeq": 1, "nominalG": 200, "valueG": 200.0009, "startSec": 38, "endSec": 45 },
+    { "weightSeq": 1, "measureSeq": 2, "nominalG": 200, "valueG": 200.0000, "startSec": 68, "endSec": 75 },
+    { "weightSeq": 1, "measureSeq": 3, "nominalG": 200, "valueG": 200.0009, "startSec": 94, "endSec": 103 },
+    { "weightSeq": 2, "measureSeq": 1, "nominalG": 50, "valueG": 50.0003, "startSec": 127, "endSec": 133 },
+    { "weightSeq": 2, "measureSeq": 2, "nominalG": 50, "valueG": 50.0002, "startSec": 146, "endSec": 153 },
+    { "weightSeq": 2, "measureSeq": 3, "nominalG": 50, "valueG": 50.0003, "startSec": 170, "endSec": 178 },
+    { "weightSeq": 3, "measureSeq": 1, "nominalG": 10, "valueG": 10.0001, "startSec": 205, "endSec": 211 },
+    { "weightSeq": 3, "measureSeq": 2, "nominalG": 10, "valueG": 10.0001, "startSec": 226, "endSec": 232 },
+    { "weightSeq": 3, "measureSeq": 3, "nominalG": 10, "valueG": 10.0001, "startSec": 250, "endSec": 258 }
+  ],
+  "verdict": "PASS"
+}

@@ -2,7 +2,7 @@
 
 第 8 组课程设计。需求见《第8组天平校验视频分析系统项目需求规格说明书》。
 
-当前进度：批次 1 至 3 已完成，批次 5（记录与判定）、批次 6（复核与查询）、批次 7（完善优化）、批次 8（测试与交付）已完成，批次 4（识别原型）进行中——稳定读数段与七段数字框已能定位，读数解码尚未达到可用准确率。
+当前进度：批次 1 至 8 均已完成。视频上传后可自动识别九次称量、换算 g/mg、生成校验草稿并进入人工确认流程。
 
 ## 一、目录结构
 
@@ -10,7 +10,7 @@
 balance-check/
 ├─ backend/       Spring Boot 3.3.5 后端（登录、上传、天平清单、记录与判定、复核、基础数据维护）
 ├─ frontend/      Vue 3 + Vite + Element Plus 前端
-├─ analysis/      Python 识别原型（OpenCV 七段码定位与解码、稳定读数段）
+├─ analysis/      Python 视频识别（稳定段、字符模板、g/mg 与小数点规则）
 ├─ database/      schema.sql 建表、seed.sql 初始化数据
 ├─ docs/          设计说明书、部署手册、测试报告、交付清单、运行截图
 ├─ testing/       金标准标注与识别评测脚本
@@ -120,9 +120,13 @@ python -m venv .venv
 - 新增一键测试 `scripts/test-all.ps1`：后端编译、两套独立校验、前端单元测试，后端在线时自动追加接口冒烟
 - 补齐交付文档：部署手册、测试报告、交付清单；全部 PowerShell 脚本改为 UTF-8 BOM，Windows PowerShell 5.1 可直接执行
 
-### 6.8 识别原型（批次 4，进行中）
+### 6.8 视频识别与自动建单（批次 4）
 
-ffmpeg 抽帧 + 稳定读数段检测已在样本视频上跑通；OpenCV 能定位显示屏中的七段数字框，0.0000 帧上 5 个数字框有 4 个解码正确。称量帧的多位数字配对与单位识别仍需校准。
+- 上传成功后前端自动调用 `POST /api/videos/{id}/analyze`，状态按 `UPLOADED → ANALYZING → ANALYZED/FAILED` 推进
+- F001 使用 Mettler 图形屏模板；F002 自动比较 `f002a` 与 `f002b` 两套显示档案，选择九次有效读数更多的结果
+- 自动识别 g/mg、小数点、量程、视频时间点，并生成九次称量草稿
+- 草稿关联原视频，检验人员确认清洁、水平调节与内部校正信息后可提交复核
+- 三段样本视频已通过真实后端接口完成端到端测试，均生成 9 条称量并判定通过
 
 ## 七、接口一览
 
@@ -137,6 +141,7 @@ ffmpeg 抽帧 + 稳定读数段检测已在样本视频上跑通；OpenCV 能定
 | GET | /api/weight-sets | 砝码组与盒内砝码 |
 | POST | /api/videos | 上传视频 |
 | GET | /api/videos | 视频列表 |
+| POST | /api/videos/{id}/analyze | 识别视频并生成校验草稿 |
 | DELETE | /api/videos/{id} | 删除未识别的视频 |
 | POST | /api/calibrations | 创建校验记录草稿 |
 | PUT | /api/calibrations/{id} | 修改草稿 |
@@ -163,6 +168,10 @@ pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁
 pwsh -File scripts\batch6-unit-check.ps1   # 复核规则与记录表渲染（15 项，不依赖数据库）
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
 pwsh -File scripts\batch7-unit-check.ps1   # 天平清单校验规则（8 项，不依赖数据库）
+analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
+                                           # 识别小数点、g/mg 与量程规则（5 项）
+analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
+                                           # 三段样本视频识别回归（3 个用例）
 node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs
                                           # 前端换算与复核状态（12 项，不依赖 npm 安装）
 ```
@@ -180,7 +189,7 @@ pwsh -File scripts\package-release.ps1                      # 生成 dist/balanc
 pwsh -File scripts\verify-release.ps1 -Path dist\balance-check-0.1.0-SNAPSHOT
 ```
 
-已知问题：本机 Maven 的 testCompile 无法解析主代码包（离线仓库缺 JUnit 与 surefire 依赖），判定、复核与天平清单规则暂用独立 runner 验证（`scripts/batch6-unit-check.ps1`、`scripts/batch7-unit-check.ps1`），JUnit 测试待恢复；批次 4 的读数解码准确率尚未达标。
+已知问题：本机 Maven 的 testCompile 无法解析主代码包（离线仓库缺 JUnit 与 surefire 依赖），判定、复核与天平清单规则暂用独立 runner 验证（`scripts/batch6-unit-check.ps1`、`scripts/batch7-unit-check.ps1`），JUnit 测试待恢复；识别模板目前覆盖 F001、F002 的现有固定机位，更换机位或新设备需重新标定。
 
 ## 九、批次进度
 
@@ -189,7 +198,7 @@ pwsh -File scripts\verify-release.ps1 -Path dist\balance-check-0.1.0-SNAPSHOT
 | 1 | 需求确认 | 已完成（需求规格说明书、需求确认结果） |
 | 2 | 方案设计 | 已完成（系统设计说明书） |
 | 3 | 框架搭建 | 已完成并通过接口实测 |
-| 4 | 识别原型 | 进行中（稳定段与七段定位可用，解码待校准） |
+| 4 | 视频识别 | 已完成（三段样本识别、自动建单与端到端接口测试） |
 | 5 | 记录与判定 | 已完成（前后端联调通过） |
 | 6 | 复核与查询 | 已完成（复核、退回、解锁、查询、记录表导出） |
 | 7 | 完善优化 | 已完成（清单维护、操作日志、记录表模板） |

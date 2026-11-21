@@ -18,6 +18,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 if ($JavaHome -and (Test-Path (Join-Path $JavaHome 'bin\javac.exe'))) {
     $javac = Join-Path $JavaHome 'bin\javac.exe'
     $java = Join-Path $JavaHome 'bin\java.exe'
+    $jarTool = Join-Path $JavaHome 'bin\jar.exe'
 } else {
     $javacCommand = Get-Command javac -ErrorAction SilentlyContinue
     $javaCommand = Get-Command java -ErrorAction SilentlyContinue
@@ -27,6 +28,11 @@ if ($JavaHome -and (Test-Path (Join-Path $JavaHome 'bin\javac.exe'))) {
     }
     $javac = $javacCommand.Source
     $java = $javaCommand.Source
+    $jarTool = (Get-Command jar -ErrorAction SilentlyContinue).Source
+}
+if (-not $jarTool -or -not (Test-Path $jarTool)) {
+    Write-Host '找不到 jar 工具，请使用完整 JDK。' -ForegroundColor Yellow
+    exit 1
 }
 
 $ruleClass = Join-Path $Classes 'com\bzd\balance\balance\BalanceRules.class'
@@ -38,11 +44,13 @@ if (-not (Test-Path $ruleClass)) {
 
 $out = Join-Path $repo 'backend\target\unit-check'
 New-Item -ItemType Directory -Path $out -Force | Out-Null
+$classJar = Join-Path $out 'backend-classes.jar'
 
 Write-Host "== 批次 7 独立校验 ==" -ForegroundColor Cyan
 
-& $javac -encoding UTF-8 -cp $Classes -d $out (Join-Path $repo 'scripts\BalanceRulesCheck.java')
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+& $jarTool cf $classJar -C $Classes .
+$compileOutput = & $javac -encoding UTF-8 -cp $classJar -d $out (Join-Path $repo 'scripts\BalanceRulesCheck.java') 2>&1
+if ($LASTEXITCODE -ne 0) { $compileOutput | Write-Host; exit $LASTEXITCODE }
 
-& $java "-Dstdout.encoding=UTF-8" "-Dstderr.encoding=UTF-8" -cp "$Classes;$out" BalanceRulesCheck
+& $java "-Dstdout.encoding=UTF-8" "-Dstderr.encoding=UTF-8" -cp "$classJar;$out" BalanceRulesCheck
 exit $LASTEXITCODE

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bzd.balance.auth.SessionUser;
 import com.bzd.balance.balance.Balance;
@@ -37,6 +38,7 @@ public class CalibrationService {
         this.auditService = auditService;
     }
 
+    @Transactional
     public CalibrationDtos.RecordView create(CalibrationDtos.SaveRequest request,
                                              SessionUser user,
                                              String ip) {
@@ -50,6 +52,10 @@ public class CalibrationService {
         }
         if (request.getMeasurements() == null || request.getMeasurements().isEmpty()) {
             throw new BizException("请填写称量数据");
+        }
+        if (request.getVideoId() != null
+                && calibrationMapper.findByVideoId(request.getVideoId()) != null) {
+            throw new BizException("该视频已经生成校验记录");
         }
 
         Calibration record = new Calibration();

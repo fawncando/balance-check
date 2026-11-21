@@ -51,6 +51,19 @@ if ($DbPassword) { $env:DB_PASSWORD = $DbPassword }
 if ($UploadDir) { $env:APP_UPLOAD_DIR = $UploadDir }
 $env:SERVER_PORT = [string]$Port
 
+if (-not $env:APP_RECOGNITION_PYTHON) {
+    $venvPython = Join-Path $root 'analysis\.venv\Scripts\python.exe'
+    if (Test-Path $venvPython) {
+        $env:APP_RECOGNITION_PYTHON = $venvPython
+    }
+}
+if (-not $env:APP_RECOGNITION_SCRIPT) {
+    $env:APP_RECOGNITION_SCRIPT = Join-Path $root 'analysis\analyze_video.py'
+}
+if (-not $env:APP_RECOGNITION_FFMPEG -and $env:FFMPEG) {
+    $env:APP_RECOGNITION_FFMPEG = $env:FFMPEG
+}
+
 $argLine = '-jar "' + $Jar + '" --server.port=' + $Port
 $url = "http://localhost:$Port"
 
@@ -63,6 +76,9 @@ if ($DryRun) {
     Write-Host ("数据库 URL  : {0}" -f ($(if ($env:DB_URL) { $env:DB_URL } else { '(application.yml 默认值)' })))
     Write-Host ("数据库用户  : {0}" -f ($(if ($env:DB_USERNAME) { $env:DB_USERNAME } else { '(application.yml 默认值)' })))
     Write-Host ("数据库口令  : {0}" -f ($(if ($DbPassword) { '******' } else { '(application.yml 默认值)' })))
+    Write-Host ("识别 Python : {0}" -f ($(if ($env:APP_RECOGNITION_PYTHON) { $env:APP_RECOGNITION_PYTHON } else { '(application.yml 默认值)' })))
+    Write-Host ("识别脚本    : {0}" -f ($(if ($env:APP_RECOGNITION_SCRIPT) { $env:APP_RECOGNITION_SCRIPT } else { '(application.yml 默认值)' })))
+    Write-Host ("ffmpeg      : {0}" -f ($(if ($env:APP_RECOGNITION_FFMPEG) { $env:APP_RECOGNITION_FFMPEG } else { '(application.yml 默认值)' })))
     Write-Host ("启动命令    : {0} {1}" -f $java, $argLine)
     Write-Host '（试运行，未启动进程）'
     exit 0

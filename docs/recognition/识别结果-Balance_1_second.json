@@ -1,0 +1,19 @@
+{
+  "video": "Balance_1_second.mp4",
+  "balanceCode": "F002",
+  "displayType": "Sartorius 七段码屏",
+  "unitNote": "120 g 量程显示 g，41 g 量程显示 mg，统一换算为 g",
+  "weighings": [
+    { "weightSeq": 1, "measureSeq": 1, "nominalG": 100, "valueG": 100.0003, "startSec": 50, "endSec": 54 },
+    { "weightSeq": 1, "measureSeq": 2, "nominalG": 100, "valueG": 100.0003, "startSec": 68, "endSec": 77 },
+    { "weightSeq": 1, "measureSeq": 3, "nominalG": 100, "valueG": 100.0008, "startSec": 100, "endSec": 107 },
+    { "weightSeq": 2, "measureSeq": 1, "nominalG": 20, "valueG": 20.0002, "startSec": 157, "endSec": 169 },
+    { "weightSeq": 2, "measureSeq": 2, "nominalG": 20, "valueG": 20.0001, "startSec": 190, "endSec": 197 },
+    { "weightSeq": 2, "measureSeq": 3, "nominalG": 20, "valueG": 20.0001, "startSec": 223, "endSec": 232 },
+    { "weightSeq": 3, "measureSeq": 1, "nominalG": 2, "valueG": 2.00008, "startSec": 269, "endSec": 282 },
+    { "weightSeq": 3, "measureSeq": 2, "nominalG": 2, "valueG": 2.00006, "startSec": 319, "endSec": 328 },
+    { "weightSeq": 3, "measureSeq": 3, "nominalG": 2, "valueG": 2.00008, "startSec": 353, "endSec": 365 }
+  ],
+  "verdict": "PASS",
+  "note": "小数点位置由画面判定：7 位数字为 100.xxx；6 位且数字区起点靠左为 20000.x mg，起点靠右为 2000.0x mg；不依赖称量顺序。41 g 量程读数由 mg 除以 1000"
+}

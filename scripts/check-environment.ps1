@@ -78,6 +78,31 @@ $npm = Get-Command npm -ErrorAction SilentlyContinue
 if ($npm) { Report 'PASS' 'npm' ((& npm -v) | Out-String).Trim() }
 else { Report 'WARN' '找不到 npm' '仅前端构建需要' }
 
+# Python 识别环境
+$repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
+$python = $null
+if ($env:APP_RECOGNITION_PYTHON -and (Test-Path $env:APP_RECOGNITION_PYTHON)) {
+    $python = $env:APP_RECOGNITION_PYTHON
+} else {
+    $venvPython = Join-Path $repo 'analysis\.venv\Scripts\python.exe'
+    if (Test-Path $venvPython) { $python = $venvPython }
+    elseif (Get-Command python -ErrorAction SilentlyContinue) { $python = 'python' }
+}
+if ($python) {
+    $pythonVersion = ((& $python --version 2>&1) | Out-String).Trim()
+    $deps = ((& $python -c "import cv2,numpy; print('cv2',cv2.__version__,'numpy',numpy.__version__)" 2>&1) | Out-String).Trim()
+    if ($LASTEXITCODE -eq 0) {
+        Report 'PASS' 'Python 识别依赖' ("{0}; {1}" -f $pythonVersion, $deps)
+    } else {
+        Report 'FAIL' 'Python 识别依赖缺失' '执行 python -m pip install -r analysis\requirements.txt'
+    }
+} else {
+    Report 'FAIL' '找不到 Python' '安装 Python 3.11 及以上，或设置 APP_RECOGNITION_PYTHON'
+}
+$analysisScript = Join-Path $repo 'analysis\analyze_video.py'
+if (Test-Path $analysisScript) { Report 'PASS' '识别入口脚本' $analysisScript }
+else { Report 'FAIL' '缺少识别入口脚本' $analysisScript }
+
 # MySQL 客户端
 $mysql = Get-Command mysql -ErrorAction SilentlyContinue
 if ($mysql) { Report 'PASS' 'MySQL 客户端' ((& mysql --version) | Out-String).Trim() }

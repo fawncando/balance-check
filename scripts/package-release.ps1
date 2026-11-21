@@ -30,7 +30,7 @@ if ($DryRun) {
     Write-Host '[1/6] 构建后端：backend\mvnw.cmd -o -DskipTests package' -ForegroundColor DarkGray
     Write-Host '[2/6] 构建前端：frontend 目录执行 npm run build' -ForegroundColor DarkGray
     Write-Host '[3/6] 复制 jar 与前端静态资源' -ForegroundColor DarkGray
-    Write-Host '[4/6] 复制 database、docs、scripts 与 README' -ForegroundColor DarkGray
+    Write-Host '[4/6] 复制 database、analysis、docs、scripts 与 README' -ForegroundColor DarkGray
     Write-Host '[5/6] 生成 VERSION.txt' -ForegroundColor DarkGray
     Write-Host '[6/6] 压缩为 zip' -ForegroundColor DarkGray
     Write-Host '（试运行，未执行构建）'
@@ -80,10 +80,18 @@ if (-not $SkipFrontend) {
     Copy-Item (Join-Path $repo 'frontend\dist') (Join-Path $target 'frontend') -Recurse
 }
 
-Write-Host '[4/6] 复制数据库脚本、文档、脚本与 README…'
+Write-Host '[4/6] 复制数据库脚本、识别服务、文档、脚本与 README…'
 $databaseTarget = Join-Path $target 'database'
 New-Item -ItemType Directory -Path $databaseTarget -Force | Out-Null
 Copy-Item (Join-Path $repo 'database\*.sql') $databaseTarget
+
+$analysisTarget = Join-Path $target 'analysis'
+New-Item -ItemType Directory -Path $analysisTarget -Force | Out-Null
+Copy-Item (Join-Path $repo 'analysis\*.py') $analysisTarget
+Copy-Item (Join-Path $repo 'analysis\requirements.txt') $analysisTarget
+Copy-Item (Join-Path $repo 'analysis\README.md') $analysisTarget
+Copy-Item (Join-Path $repo 'analysis\templates') (Join-Path $analysisTarget 'templates') -Recurse
+
 Copy-Item (Join-Path $repo 'docs') (Join-Path $target 'docs') -Recurse
 $scriptsTarget = Join-Path $target 'scripts'
 New-Item -ItemType Directory -Path $scriptsTarget -Force | Out-Null

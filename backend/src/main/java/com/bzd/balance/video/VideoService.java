@@ -34,15 +34,18 @@ public class VideoService {
     private final VideoMapper videoMapper;
     private final BalanceMapper balanceMapper;
     private final AuditService auditService;
+    private final VideoRecognitionService recognitionService;
     private final Path uploadRoot;
 
     public VideoService(VideoMapper videoMapper,
                         BalanceMapper balanceMapper,
                         AuditService auditService,
+                        VideoRecognitionService recognitionService,
                         StorageService storageService) {
         this.videoMapper = videoMapper;
         this.balanceMapper = balanceMapper;
         this.auditService = auditService;
+        this.recognitionService = recognitionService;
         this.uploadRoot = storageService.getRoot();
     }
 
@@ -109,6 +112,10 @@ public class VideoService {
             return videoMapper.findAll();
         }
         return videoMapper.findByUploader(user.getId());
+    }
+
+    public VideoView analyze(Long id, SessionUser user, String ip) {
+        return recognitionService.analyze(id, user, ip);
     }
 
     public void delete(Long id, SessionUser user, String ip) {

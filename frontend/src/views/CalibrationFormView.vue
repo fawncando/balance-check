@@ -93,9 +93,9 @@ async function applyRecord(record) {
     }
   }
   calibrationTime.value = new Date(record.calibrationTime)
-  form.cleanOk = record.cleanOk ?? true
-  form.levelOk = record.levelOk ?? true
-  form.internalCalibrationResult = record.internalCalibrationResult || '是'
+  form.cleanOk = record.cleanOk ?? null
+  form.levelOk = record.levelOk ?? null
+  form.internalCalibrationResult = record.internalCalibrationResult ?? null
   form.remark = record.remark || '无'
   rows.value = (record.measurements || []).map((m) => {
     const balance = balances.value.find((b) => b.id === record.balanceId)

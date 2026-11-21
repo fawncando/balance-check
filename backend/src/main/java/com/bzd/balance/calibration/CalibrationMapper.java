@@ -41,9 +41,13 @@ public interface CalibrationMapper {
     @Select("SELECT * FROM calibration WHERE id = #{id}")
     Calibration findById(Long id);
 
+    @Select("SELECT * FROM calibration WHERE video_id = #{videoId} LIMIT 1")
+    Calibration findByVideoId(Long videoId);
+
     /** 记录详情：带出天平、检验人员与复核结论。 */
     @Select("""
-            SELECT c.id, c.record_no, c.balance_id, b.code AS balance_code, b.unique_no AS balance_unique_no,
+            SELECT c.id, c.record_no, c.balance_id, c.video_id,
+                   b.code AS balance_code, b.unique_no AS balance_unique_no,
                    b.department, c.calibration_time, c.status, c.external_result, c.clean_ok, c.level_ok,
                    c.internal_calibration_result, c.remark, c.inspector_id,
                    u.display_name AS inspector_name, c.submitted_at,
@@ -70,7 +74,8 @@ public interface CalibrationMapper {
      * inspectorId 由服务层按角色决定，检验人员只能查到自己创建的记录。
      */
     @Select("""
-            SELECT c.id, c.record_no, c.balance_id, b.code AS balance_code, b.unique_no AS balance_unique_no,
+            SELECT c.id, c.record_no, c.balance_id, c.video_id,
+                   b.code AS balance_code, b.unique_no AS balance_unique_no,
                    b.department, c.calibration_time, c.status, c.external_result, c.clean_ok, c.level_ok,
                    c.internal_calibration_result, c.remark, c.inspector_id,
                    u.display_name AS inspector_name, c.submitted_at,

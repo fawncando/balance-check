@@ -114,6 +114,7 @@ public final class CalibrationDtos {
         private Long id;
         private String recordNo;
         private Long balanceId;
+        private Long videoId;
         private String balanceCode;
         private String balanceUniqueNo;
         private String department;
@@ -139,6 +140,8 @@ public final class CalibrationDtos {
         public void setRecordNo(String recordNo) { this.recordNo = recordNo; }
         public Long getBalanceId() { return balanceId; }
         public void setBalanceId(Long balanceId) { this.balanceId = balanceId; }
+        public Long getVideoId() { return videoId; }
+        public void setVideoId(Long videoId) { this.videoId = videoId; }
         public String getBalanceCode() { return balanceCode; }
         public void setBalanceCode(String balanceCode) { this.balanceCode = balanceCode; }
         public String getBalanceUniqueNo() { return balanceUniqueNo; }

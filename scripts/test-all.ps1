@@ -60,6 +60,23 @@ if ($SkipBuild) {
 Invoke-Child '批次 6 独立校验（复核规则、记录表渲染）' (Join-Path $repo 'scripts\batch6-unit-check.ps1') $unitArgs
 Invoke-Child '批次 7 独立校验（天平清单规则）' (Join-Path $repo 'scripts\batch7-unit-check.ps1') $unitArgs
 
+$python = $env:APP_RECOGNITION_PYTHON
+if (-not $python) {
+    $venvPython = Join-Path $repo 'analysis\.venv\Scripts\python.exe'
+    if (Test-Path $venvPython) { $python = $venvPython }
+    elseif (Get-Command python -ErrorAction SilentlyContinue) { $python = 'python' }
+}
+if ($python) {
+    Write-Host ""
+    Write-Host '== 批次 4 识别规则单元测试 ==' -ForegroundColor Cyan
+    & $python -m unittest discover -s (Join-Path $repo 'analysis') -p 'test_*.py' -v
+    $pythonCode = $LASTEXITCODE
+    Add-Result '批次 4 识别规则单元测试' ($pythonCode -eq 0) ("exit {0}" -f $pythonCode)
+} else {
+    Write-Host '找不到 Python，跳过识别规则单元测试。' -ForegroundColor Yellow
+    Add-Result '批次 4 识别规则单元测试' $true '跳过（未安装 Python）'
+}
+
 if ($SkipFrontend) {
     Add-Result '前端单元测试' $true '跳过'
 } else {

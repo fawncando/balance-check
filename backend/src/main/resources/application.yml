@@ -27,3 +27,9 @@ mybatis:
 app:
   # 视频体积大，放在数据盘；可用环境变量 APP_UPLOAD_DIR 覆盖
   upload-dir: ${APP_UPLOAD_DIR:D:/develop/balance-check-data/uploads}
+  recognition:
+    # 部署时安装 Python 依赖并把本项指向实际 python；开发机可指向 analysis/.venv
+    python-command: ${APP_RECOGNITION_PYTHON:python}
+    script-path: ${APP_RECOGNITION_SCRIPT:../analysis/analyze_video.py}
+    ffmpeg-command: ${APP_RECOGNITION_FFMPEG:ffmpeg}
+    timeout-seconds: ${APP_RECOGNITION_TIMEOUT:600}

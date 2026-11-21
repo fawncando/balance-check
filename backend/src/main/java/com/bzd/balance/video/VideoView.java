@@ -10,6 +10,7 @@ public class VideoView {
     private Long sizeBytes;
     private Long balanceId;
     private String balanceCode;
+    private Long calibrationId;
     private String uploaderName;
     private LocalDateTime uploadedAt;
     private String status;
@@ -61,6 +62,14 @@ public class VideoView {
 
     public void setBalanceCode(String balanceCode) {
         this.balanceCode = balanceCode;
+    }
+
+    public Long getCalibrationId() {
+        return calibrationId;
+    }
+
+    public void setCalibrationId(Long calibrationId) {
+        this.calibrationId = calibrationId;
     }
 
     public String getUploaderName() {

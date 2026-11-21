@@ -1,0 +1,19 @@
+{
+  "video": "Balance_1_first.mp4",
+  "balanceCode": "F002",
+  "displayType": "Sartorius 七段码屏",
+  "unit": "g",
+  "weighings": [
+    { "weightSeq": 1, "measureSeq": 1, "nominalG": 100, "valueG": 100.0004, "startSec": 44, "endSec": 53 },
+    { "weightSeq": 1, "measureSeq": 2, "nominalG": 100, "valueG": 100.0004, "startSec": 70, "endSec": 78 },
+    { "weightSeq": 1, "measureSeq": 3, "nominalG": 100, "valueG": 100.0004, "startSec": 97, "endSec": 104 },
+    { "weightSeq": 2, "measureSeq": 1, "nominalG": 20, "valueG": 20.0002, "startSec": 140, "endSec": 148 },
+    { "weightSeq": 2, "measureSeq": 2, "nominalG": 20, "valueG": 20.0002, "startSec": 164, "endSec": 173 },
+    { "weightSeq": 2, "measureSeq": 3, "nominalG": 20, "valueG": 20.0002, "startSec": 189, "endSec": 197 },
+    { "weightSeq": 3, "measureSeq": 1, "nominalG": 2, "valueG": 2.0001, "startSec": 218, "endSec": 226 },
+    { "weightSeq": 3, "measureSeq": 2, "nominalG": 2, "valueG": 2.0001, "startSec": 244, "endSec": 252 },
+    { "weightSeq": 3, "measureSeq": 3, "nominalG": 2, "valueG": 2.0001, "startSec": 268, "endSec": 275 }
+  ],
+  "verdict": "PASS",
+  "note": "同一称量内的末位跳动已按 15 秒内合并，保留稳定后的读数"
+}

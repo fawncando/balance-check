@@ -42,6 +42,15 @@ public class VideoController {
         return ApiResponse.ok(videoService.list(CurrentUser.require(session)));
     }
 
+    @PostMapping("/{id}/analyze")
+    public ApiResponse<VideoView> analyze(@PathVariable Long id,
+                                          HttpSession session,
+                                          HttpServletRequest request) {
+        SessionUser user = CurrentUser.require(session);
+        return ApiResponse.ok(videoService.analyze(
+                id, user, request.getRemoteAddr()));
+    }
+
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id, HttpSession session, HttpServletRequest request) {
         videoService.delete(id, CurrentUser.require(session), request.getRemoteAddr());

@@ -133,7 +133,8 @@ Check '开始日期晚于结束日期被拒绝' ($r.StatusCode -eq 400) "status=
 $r = Invoke-WebRequest "$base/api/calibrations/export?id=$recordId" -WebSession $reviewer -SkipHttpErrorCheck
 Check '复核人员导出记录表' ($r.StatusCode -eq 200 -and $r.Content -like '*电子天平校验记录表*') "status=$($r.StatusCode)"
 Check '导出内容含记录编号与复核人' ($r.Content -like "*$recordNo*" -and $r.Content -like '*齐一*')
-Check '导出为可打印 HTML' ($r.Headers['Content-Type'] -like '*text/html*') "type=$($r.Headers['Content-Type'])"
+$contentType = @($r.Headers['Content-Type']) -join '; '
+Check '导出为可打印 HTML' ($contentType -like '*text/html*') "type=$contentType"
 
 $r = Invoke-WebRequest "$base/api/calibrations/export?id=$recordId" -WebSession $inspector -SkipHttpErrorCheck
 Check '检验人员不能导出记录表' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"

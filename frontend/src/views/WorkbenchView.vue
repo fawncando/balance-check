@@ -2,14 +2,17 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 import http from '../api/http'
 import { auth } from '../stores/auth'
 
+const router = useRouter()
 const balances = ref([])
 const videos = ref([])
 const balanceId = ref(null)
 const selectedFile = ref(null)
 const uploading = ref(false)
+const analyzingId = ref(null)
 const progress = ref(0)
 const loading = ref(false)
 
@@ -84,7 +87,7 @@ async function startUpload() {
   uploading.value = true
   progress.value = 0
   try {
-    await http.post('/videos', form, {
+    const uploaded = await http.post('/videos', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (event) => {
         if (event.total) {
@@ -92,14 +95,39 @@ async function startUpload() {
         }
       }
     })
-    ElMessage.success('上传成功，视频已进入识别队列')
+    ElMessage.info('上传完成，开始识别九次称量')
+    const analyzed = await http.post(`/videos/${uploaded.id}/analyze`)
     selectedFile.value = null
     progress.value = 0
     await loadVideos()
+    if (analyzed.status === 'ANALYZED' && analyzed.calibrationId) {
+      ElMessage.success('识别完成，已生成校验草稿')
+      router.push(`/calibrations/${analyzed.calibrationId}/edit`)
+    } else {
+      ElMessage.error(analyzed.message || '识别失败，请检查视频后重试')
+    }
   } catch (err) {
     ElMessage.error(err.message)
   } finally {
     uploading.value = false
+  }
+}
+
+async function analyzeVideo(row) {
+  analyzingId.value = row.id
+  try {
+    const analyzed = await http.post(`/videos/${row.id}/analyze`)
+    await loadVideos()
+    if (analyzed.status !== 'ANALYZED' || !analyzed.calibrationId) {
+      ElMessage.error(analyzed.message || '识别失败')
+      return
+    }
+    ElMessage.success('识别完成，已生成校验草稿')
+    router.push(`/calibrations/${analyzed.calibrationId}/edit`)
+  } catch (err) {
+    ElMessage.error(err.message)
+  } finally {
+    analyzingId.value = null
   }
 }
 
@@ -156,7 +184,7 @@ function formatSize(bytes) {
           <div class="file-name">{{ selectedFile.name }}</div>
           <div class="note">{{ formatSize(selectedFile.size) }}</div>
         </div>
-        <el-button type="primary" :loading="uploading" @click="startUpload">上传并登记</el-button>
+        <el-button type="primary" :loading="uploading" @click="startUpload">上传并自动识别</el-button>
       </div>
 
       <el-progress v-if="uploading || progress > 0" :percentage="progress" :stroke-width="8" style="margin-top: 12px" />
@@ -179,8 +207,29 @@ function formatSize(bytes) {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="90" align="center">
+        <el-table-column prop="message" label="说明" min-width="220" show-overflow-tooltip />
+        <el-table-column label="操作" width="150" align="center">
           <template #default="{ row }">
+            <el-button
+              v-if="row.status === 'UPLOADED' && row.uploaderName === auth.user?.displayName"
+              link
+              type="primary"
+              :loading="analyzingId === row.id"
+              @click="analyzeVideo(row)"
+            >开始识别</el-button>
+            <el-button
+              v-else-if="row.status === 'FAILED' && row.uploaderName === auth.user?.displayName"
+              link
+              type="primary"
+              :loading="analyzingId === row.id"
+              @click="analyzeVideo(row)"
+            >重新识别</el-button>
+            <el-button
+              v-else-if="row.status === 'ANALYZED' && row.calibrationId"
+              link
+              type="primary"
+              @click="router.push(`/calibrations/${row.calibrationId}/edit`)"
+            >确认结果</el-button>
             <el-button
               v-if="row.status === 'UPLOADED' && row.uploaderName === auth.user?.displayName"
               link
@@ -191,7 +240,7 @@ function formatSize(bytes) {
         </el-table-column>
       </el-table>
       <div class="note" style="margin-top: 10px">
-        校验记录、复核与查询已在批次 5、6 完成；自动识别（批次 4）接入后，视频状态会从“已上传”推进到“待确认”。
+        上传后自动识别九次称量并生成校验草稿；识别完成后请人工确认过程信息，再提交复核。
       </div>
     </div>
   </div>

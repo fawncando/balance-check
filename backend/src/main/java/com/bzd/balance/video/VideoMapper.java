@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface VideoMapper {
@@ -23,20 +24,24 @@ public interface VideoMapper {
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
+                   c.id AS calibration_id,
                    u.display_name AS uploader_name, v.uploaded_at, v.status, v.message
             FROM video v
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
+            LEFT JOIN calibration c ON c.video_id = v.id
             ORDER BY v.id DESC
             """)
     List<VideoView> findAll();
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
+                   c.id AS calibration_id,
                    u.display_name AS uploader_name, v.uploaded_at, v.status, v.message
             FROM video v
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
+            LEFT JOIN calibration c ON c.video_id = v.id
             WHERE v.uploader_id = #{uploaderId}
             ORDER BY v.id DESC
             """)
@@ -47,13 +52,31 @@ public interface VideoMapper {
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
+                   c.id AS calibration_id,
                    u.display_name AS uploader_name, v.uploaded_at, v.status, v.message
             FROM video v
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
+            LEFT JOIN calibration c ON c.video_id = v.id
             WHERE v.id = #{id}
             """)
     VideoView findViewById(Long id);
+
+    @Update("""
+            UPDATE video
+            SET status = 'ANALYZING', message = '正在识别视频'
+            WHERE id = #{id} AND status IN ('UPLOADED', 'FAILED')
+            """)
+    int markAnalyzing(Long id);
+
+    @Update("""
+            UPDATE video
+            SET status = #{status}, message = #{message}
+            WHERE id = #{id}
+            """)
+    int updateStatus(@Param("id") Long id,
+                     @Param("status") String status,
+                     @Param("message") String message);
 
     @Delete("DELETE FROM video WHERE id = #{id}")
     void deleteById(@Param("id") Long id);

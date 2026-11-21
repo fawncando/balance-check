@@ -176,7 +176,7 @@ pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交
 pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、导出（34 项）
 pwsh -File scripts\batch6-unit-check.ps1   # 复核规则与记录表渲染（15 项，不依赖数据库）
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
-pwsh -File scripts\batch7-unit-check.ps1   # 天平清单校验规则（8 项，不依赖数据库）
+pwsh -File scripts\batch7-unit-check.ps1   # 天平清单与局域网地址（13 项，不依赖数据库）
 analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
                                            # 小数点、g/mg、设备档案、人员 QR 与手机入口 QR（8 项）
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe

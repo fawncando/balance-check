@@ -92,11 +92,15 @@ Write-Host '[4/6] 复制数据库脚本、识别服务、文档、脚本与 READ
 $databaseTarget = Join-Path $target 'database'
 New-Item -ItemType Directory -Path $databaseTarget -Force | Out-Null
 Copy-Item (Join-Path $repo 'database\*.sql') $databaseTarget
+if (Test-Path (Join-Path $repo 'database\migrations')) {
+    Copy-Item (Join-Path $repo 'database\migrations') (Join-Path $databaseTarget 'migrations') -Recurse
+}
 
 $analysisTarget = Join-Path $target 'analysis'
 New-Item -ItemType Directory -Path $analysisTarget -Force | Out-Null
 Copy-Item (Join-Path $repo 'analysis\*.py') $analysisTarget
 Copy-Item (Join-Path $repo 'analysis\requirements.txt') $analysisTarget
+Copy-Item (Join-Path $repo 'analysis\profiles.json') $analysisTarget
 Copy-Item (Join-Path $repo 'analysis\README.md') $analysisTarget
 Copy-Item (Join-Path $repo 'analysis\templates') (Join-Path $analysisTarget 'templates') -Recurse
 

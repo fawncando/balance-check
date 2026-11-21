@@ -136,8 +136,21 @@ Check '导出内容含记录编号与复核人' ($r.Content -like "*$recordNo*" 
 $contentType = @($r.Headers['Content-Type']) -join '; '
 Check '导出为可打印 HTML' ($contentType -like '*text/html*') "type=$contentType"
 
+$pdfPath = Join-Path ([System.IO.Path]::GetTempPath()) ('calibration-' + [guid]::NewGuid().ToString('N') + '.pdf')
+try {
+    $r = Invoke-WebRequest "$base/api/calibrations/$recordId/pdf" -WebSession $reviewer `
+        -OutFile $pdfPath -PassThru -SkipHttpErrorCheck
+    $pdfHeader = [Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($pdfPath), 0, 4)
+    Check '复核人员下载服务端 PDF' ($r.StatusCode -eq 200 -and $pdfHeader -eq '%PDF') `
+        "status=$($r.StatusCode) header=$pdfHeader size=$((Get-Item $pdfPath).Length)"
+} finally {
+    if ([System.IO.File]::Exists($pdfPath)) { [System.IO.File]::Delete($pdfPath) }
+}
+
 $r = Invoke-WebRequest "$base/api/calibrations/export?id=$recordId" -WebSession $inspector -SkipHttpErrorCheck
 Check '检验人员不能导出记录表' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"
+$r = Invoke-WebRequest "$base/api/calibrations/$recordId/pdf" -WebSession $inspector -SkipHttpErrorCheck
+Check '检验人员不能下载服务端 PDF' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"
 $r = Invoke-WebRequest "$base/api/calibrations/export" -WebSession $reviewer -SkipHttpErrorCheck
 Check '导出缺少记录编号返回 400' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 

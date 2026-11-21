@@ -102,7 +102,7 @@ python -m venv .venv
 - 退回必须填写复核意见，通过可不填；复核结论一条记录一条，重复复核覆盖上一条，历次动作写入 audit_log
 - 已复核记录可由复核人员解锁，记录回到草稿，检验人员修改后重新提交
 - 记录查询支持按天平、状态、记录编号关键字与日期段过滤；检验人员只能查询与查看自己创建的记录
-- 记录表导出返回可直接打印的 A4 页面，浏览器“另存为 PDF”即可归档，仅复核确认人员与管理员可用
+- 复核人员与管理员可直接下载服务端生成的 A4 PDF；保留 HTML 打印页作为兼容入口
 - 记录详情展示复核结论、复核意见与九次称量偏差曲线（相对标称值的百分比，允许带 ±0.05%）
 
 ### 6.6 完善优化（批次 7）
@@ -123,7 +123,11 @@ python -m venv .venv
 ### 6.8 视频识别与自动建单（批次 4）
 
 - 上传成功后前端自动调用 `POST /api/videos/{id}/analyze`，状态按 `UPLOADED → ANALYZING → ANALYZED/FAILED` 推进
+- 识别任务进入后台线程池，接口约 100 ms 返回 `ANALYZING`，前端每秒轮询视频状态
 - F001 使用 Mettler 图形屏模板；F002 自动比较 `f002a` 与 `f002b` 两套显示档案，选择九次有效读数更多的结果
+- 设备与候选档案通过 `app.recognition.device-profiles` 配置，新增设备只需增加模板、`profiles.json` 和映射
+- 使用 OpenCV QRCodeDetector 识别视频中人员卡；卡号与上传账号 `card_no` 一致才标记通过，出现不一致时识别失败且不建单
+- 输出整体/单次置信度与异常帧数；低于阈值或异常帧过多时标记“需重点复核”
 - 自动识别 g/mg、小数点、量程、视频时间点，并生成九次称量草稿
 - 草稿关联原视频，检验人员确认清洁、水平调节与内部校正信息后可提交复核
 - 三段样本视频已通过真实后端接口完成端到端测试，均生成 9 条称量并判定通过
@@ -142,6 +146,7 @@ python -m venv .venv
 | POST | /api/videos | 上传视频 |
 | GET | /api/videos | 视频列表 |
 | POST | /api/videos/{id}/analyze | 识别视频并生成校验草稿 |
+| GET | /api/videos/{id} | 查询识别状态与身份核验结果 |
 | DELETE | /api/videos/{id} | 删除未识别的视频 |
 | POST | /api/calibrations | 创建校验记录草稿 |
 | PUT | /api/calibrations/{id} | 修改草稿 |
@@ -151,6 +156,7 @@ python -m venv .venv
 | GET | /api/calibrations | 记录查询（balanceId、status、recordNo、dateFrom、dateTo） |
 | GET | /api/calibrations/{id} | 记录详情 |
 | GET | /api/calibrations/export?id= | 记录表打印页（HTML，复核人员） |
+| GET | /api/calibrations/{id}/pdf | 服务端生成 A4 PDF（复核人员、管理员） |
 | GET | /api/logs | 操作日志（管理员，分页） |
 | GET | /api/users | 用户列表（管理员） |
 | GET | /api/templates | 记录表模板版本（管理员） |
@@ -169,7 +175,7 @@ pwsh -File scripts\batch6-unit-check.ps1   # 复核规则与记录表渲染（15
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
 pwsh -File scripts\batch7-unit-check.ps1   # 天平清单校验规则（8 项，不依赖数据库）
 analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
-                                           # 识别小数点、g/mg 与量程规则（5 项）
+                                           # 小数点、g/mg、设备档案与人员 QR（7 项）
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
                                            # 三段样本视频识别回归（3 个用例）
 node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs
@@ -189,9 +195,11 @@ pwsh -File scripts\start-backend.ps1                       # 启动后端并等�
 pwsh -File scripts\stop-backend.ps1                        # 停止后端
 pwsh -File scripts\package-release.ps1                      # 生成 dist/balance-check-<版本> 与 zip
 pwsh -File scripts\verify-release.ps1 -Path dist\balance-check-0.1.0-SNAPSHOT
+pwsh -File scripts\stress-test.ps1 -BaseUrl http://localhost:8081 -VideoDir D:\videos
+                                           # 3 路并发识别 + 6 路并发提交/复核
 ```
 
-已知问题：本机 Maven 的 testCompile 无法解析主代码包（离线仓库缺 JUnit 与 surefire 依赖），判定、复核与天平清单规则暂用独立 runner 验证（`scripts/batch6-unit-check.ps1`、`scripts/batch7-unit-check.ps1`），JUnit 测试待恢复；识别模板目前覆盖 F001、F002 的现有固定机位，更换机位或新设备需重新标定。
+已知限制：本机 Maven 的 testCompile 仍使用独立 runner 验证；识别模板覆盖 F001、F002 的现有固定机位，更换机位或新设备需补标定模板与设备映射。当前仍为单实例内存 Session，多实例部署需要共享会话。
 
 ## 九、批次进度
 
@@ -200,7 +208,7 @@ pwsh -File scripts\verify-release.ps1 -Path dist\balance-check-0.1.0-SNAPSHOT
 | 1 | 需求确认 | 已完成（需求规格说明书、需求确认结果） |
 | 2 | 方案设计 | 已完成（系统设计说明书） |
 | 3 | 框架搭建 | 已完成并通过接口实测 |
-| 4 | 视频识别 | 已完成（三段样本识别、自动建单与端到端接口测试） |
+| 4 | 视频识别 | 已完成（异步识别、人员卡、置信度、自动建单与端到端测试） |
 | 5 | 记录与判定 | 已完成（前后端联调通过） |
 | 6 | 复核与查询 | 已完成（复核、退回、解锁、查询、记录表导出） |
 | 7 | 完善优化 | 已完成（清单维护、操作日志、记录表模板） |

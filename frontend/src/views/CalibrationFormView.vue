@@ -22,6 +22,13 @@ const recordId = ref(null)
 const recordNo = ref('')
 const loading = ref(false)
 const saving = ref(false)
+const analysis = reactive({
+  videoId: null,
+  identityVerified: null,
+  analysisConfidence: null,
+  anomalyFrames: 0,
+  personCard: null
+})
 
 const currentBalance = computed(() => balances.value.find((b) => b.id === balanceId.value))
 const filled = computed(() => rows.value.filter((r) => r.displayValue !== null && r.displayValue !== '').length)
@@ -97,6 +104,11 @@ async function applyRecord(record) {
   form.levelOk = record.levelOk ?? null
   form.internalCalibrationResult = record.internalCalibrationResult ?? null
   form.remark = record.remark || '无'
+  analysis.videoId = record.videoId
+  analysis.identityVerified = record.identityVerified
+  analysis.analysisConfidence = record.analysisConfidence
+  analysis.anomalyFrames = record.anomalyFrames || 0
+  analysis.personCard = record.personCard
   rows.value = (record.measurements || []).map((m) => {
     const balance = balances.value.find((b) => b.id === record.balanceId)
     const range = balance?.ranges?.find((r) => r.seqNo === m.rangeSeq)
@@ -202,6 +214,23 @@ async function save(submitAfter = false) {
       <h1 class="page-title">{{ recordId ? '编辑校验记录' : '新建校验记录' }}</h1>
       <span v-if="recordNo" class="note">记录编号 {{ recordNo }}</span>
     </div>
+
+    <el-alert
+      v-if="analysis.videoId && analysis.identityVerified !== true"
+      title="未检测到与当前账号一致的人员卡，请在提交前人工核验身份"
+      type="warning"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 12px"
+    />
+    <el-alert
+      v-if="analysis.videoId && Number(analysis.analysisConfidence || 0) < 55"
+      :title="`识别置信度较低：${analysis.analysisConfidence || 0}%，异常帧 ${analysis.anomalyFrames}，请重点复核`"
+      type="warning"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 12px"
+    />
 
     <div class="verdict" :class="verdictClass">
       <div>

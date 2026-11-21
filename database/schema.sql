@@ -89,6 +89,11 @@ CREATE TABLE IF NOT EXISTS video (
     status        VARCHAR(20)  NOT NULL DEFAULT 'UPLOADED'
                   COMMENT 'UPLOADED/ANALYZING/ANALYZED/FAILED',
     message       VARCHAR(500) NULL,
+    person_card   VARCHAR(20)  NULL COMMENT '视频中识别到的人员卡号',
+    identity_verified TINYINT(1) NULL COMMENT '是否与上传账号卡号一致',
+    analysis_profile VARCHAR(20) NULL COMMENT '识别显示档案',
+    analysis_confidence DECIMAL(5,2) NULL COMMENT '整体识别置信度 0-100',
+    anomaly_frames INT NOT NULL DEFAULT 0 COMMENT '未能稳定解码的帧数',
     PRIMARY KEY (id),
     KEY idx_video_uploader (uploader_id),
     KEY idx_video_balance (balance_id),

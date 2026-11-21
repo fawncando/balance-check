@@ -34,22 +34,25 @@ def norm_glyph(gray, box):
     return patch.astype(np.float32) / 255.0
 
 
-def read_frame(path, templates):
-    gray = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    if gray is None:
-        return ""
-    x, y, w, h = PANEL
-    panel = gray[y : y + h, x : x + w]
+def read_panel(panel, templates):
+    """Decode a pre-cropped display panel and return text plus confidence."""
+    if panel is None or panel.size == 0:
+        return "", 0.0
     boxes = digit_boxes(panel)
     text = ""
+    confidences = []
     for box in boxes:
         glyph = norm_glyph(panel, box)
-        best, score = "?", float("inf")
+        ranked = []
         for digit, template in templates.items():
             mse = float(np.mean((glyph - template) ** 2))
-            if mse < score:
-                best, score = digit, mse
+            ranked.append((mse, digit))
+        ranked.sort()
+        best = ranked[0][1] if ranked else "?"
         text += best
+        if len(ranked) >= 2:
+            first, second = ranked[0][0], ranked[1][0]
+            confidences.append(max(0.0, min(1.0, 1.0 - first / max(second, 1e-6))))
 
     blur = cv2.GaussianBlur(panel, (3, 3), 0)
     _, mask = cv2.threshold(
@@ -72,4 +75,14 @@ def read_frame(path, templates):
         )
         if 0 < decimal_pos < len(text):
             text = text[:decimal_pos] + "." + text[decimal_pos:]
+    confidence = sum(confidences) / len(confidences) if confidences else 0.0
+    return text, confidence
+
+
+def read_frame(path, templates):
+    gray = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    if gray is None:
+        return ""
+    x, y, w, h = PANEL
+    text, _ = read_panel(gray[y : y + h, x : x + w], templates)
     return text

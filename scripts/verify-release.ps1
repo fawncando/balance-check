@@ -49,8 +49,10 @@ if ($AllowMissingFrontend) {
 
 Check '建表脚本 schema.sql' (Test-Path (Join-Path $root 'database\schema.sql'))
 Check '初始化数据 seed.sql' (Test-Path (Join-Path $root 'database\seed.sql'))
+Check '数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrations\001_recognition_enhancements.sql'))
 Check '视频识别入口 analyze_video.py' (Test-Path (Join-Path $root 'analysis\analyze_video.py'))
 Check '视频识别依赖 requirements.txt' (Test-Path (Join-Path $root 'analysis\requirements.txt'))
+Check '视频识别档案 profiles.json' (Test-Path (Join-Path $root 'analysis\profiles.json'))
 $templateDir = Join-Path $root 'analysis\templates'
 $templateCount = if (Test-Path $templateDir) { @(Get-ChildItem $templateDir -Filter '*.npz').Count } else { 0 }
 Check '视频识别标定模板（3 个）' ($templateCount -eq 3) ("{0} 个" -f $templateCount)

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,13 +28,16 @@ public class CalibrationController {
     private final CalibrationService calibrationService;
     private final ReviewService reviewService;
     private final RecordSheetExporter recordSheetExporter;
+    private final RecordSheetPdfExporter recordSheetPdfExporter;
 
     public CalibrationController(CalibrationService calibrationService,
                                  ReviewService reviewService,
-                                 RecordSheetExporter recordSheetExporter) {
+                                 RecordSheetExporter recordSheetExporter,
+                                 RecordSheetPdfExporter recordSheetPdfExporter) {
         this.calibrationService = calibrationService;
         this.reviewService = reviewService;
         this.recordSheetExporter = recordSheetExporter;
+        this.recordSheetPdfExporter = recordSheetPdfExporter;
     }
 
     @PostMapping
@@ -107,5 +111,18 @@ public class CalibrationController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
                 .body(html);
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> exportPdf(@PathVariable Long id,
+                                            HttpSession session) {
+        SessionUser user = CurrentUser.require(session);
+        RecordSheetPdfExporter.PdfExport pdf =
+                recordSheetPdfExporter.export(id, user);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + pdf.filename() + "\"")
+                .body(pdf.content());
     }
 }

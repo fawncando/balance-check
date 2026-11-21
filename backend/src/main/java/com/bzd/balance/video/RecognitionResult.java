@@ -7,6 +7,10 @@ public class RecognitionResult {
 
     private String profile;
     private String verdict;
+    private String personCard;
+    private BigDecimal confidence;
+    private Integer anomalyFrames;
+    private Boolean needsReview;
     private List<Weighing> weighings;
 
     public String getProfile() {
@@ -25,6 +29,38 @@ public class RecognitionResult {
         this.verdict = verdict;
     }
 
+    public String getPersonCard() {
+        return personCard;
+    }
+
+    public void setPersonCard(String personCard) {
+        this.personCard = personCard;
+    }
+
+    public BigDecimal getConfidence() {
+        return confidence;
+    }
+
+    public void setConfidence(BigDecimal confidence) {
+        this.confidence = confidence;
+    }
+
+    public Integer getAnomalyFrames() {
+        return anomalyFrames;
+    }
+
+    public void setAnomalyFrames(Integer anomalyFrames) {
+        this.anomalyFrames = anomalyFrames;
+    }
+
+    public Boolean getNeedsReview() {
+        return needsReview;
+    }
+
+    public void setNeedsReview(Boolean needsReview) {
+        this.needsReview = needsReview;
+    }
+
     public List<Weighing> getWeighings() {
         return weighings;
     }
@@ -40,6 +76,7 @@ public class RecognitionResult {
         private BigDecimal valueG;
         private Integer startSec;
         private Integer endSec;
+        private BigDecimal confidence;
 
         public Integer getWeightSeq() {
             return weightSeq;
@@ -87,6 +124,14 @@ public class RecognitionResult {
 
         public void setEndSec(Integer endSec) {
             this.endSec = endSec;
+        }
+
+        public BigDecimal getConfidence() {
+            return confidence;
+        }
+
+        public void setConfidence(BigDecimal confidence) {
+            this.confidence = confidence;
         }
     }
 }

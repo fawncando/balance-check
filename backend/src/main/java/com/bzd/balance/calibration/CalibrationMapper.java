@@ -47,6 +47,7 @@ public interface CalibrationMapper {
     /** 记录详情：带出天平、检验人员与复核结论。 */
     @Select("""
             SELECT c.id, c.record_no, c.balance_id, c.video_id,
+                   v.person_card, v.identity_verified, v.analysis_confidence, v.anomaly_frames,
                    b.code AS balance_code, b.unique_no AS balance_unique_no,
                    b.department, c.calibration_time, c.status, c.external_result, c.clean_ok, c.level_ok,
                    c.internal_calibration_result, c.remark, c.inspector_id,
@@ -56,6 +57,7 @@ public interface CalibrationMapper {
             FROM calibration c
             JOIN balance b ON b.id = c.balance_id
             JOIN sys_user u ON u.id = c.inspector_id
+            LEFT JOIN video v ON v.id = c.video_id
             LEFT JOIN review rv ON rv.calibration_id = c.id
             LEFT JOIN sys_user ru ON ru.id = rv.reviewer_id
             WHERE c.id = #{id}
@@ -75,6 +77,7 @@ public interface CalibrationMapper {
      */
     @Select("""
             SELECT c.id, c.record_no, c.balance_id, c.video_id,
+                   v.person_card, v.identity_verified, v.analysis_confidence, v.anomaly_frames,
                    b.code AS balance_code, b.unique_no AS balance_unique_no,
                    b.department, c.calibration_time, c.status, c.external_result, c.clean_ok, c.level_ok,
                    c.internal_calibration_result, c.remark, c.inspector_id,
@@ -84,6 +87,7 @@ public interface CalibrationMapper {
             FROM calibration c
             JOIN balance b ON b.id = c.balance_id
             JOIN sys_user u ON u.id = c.inspector_id
+            LEFT JOIN video v ON v.id = c.video_id
             LEFT JOIN review rv ON rv.calibration_id = c.id
             LEFT JOIN sys_user ru ON ru.id = rv.reviewer_id
             WHERE (#{inspectorId,jdbcType=BIGINT} IS NULL OR c.inspector_id = #{inspectorId,jdbcType=BIGINT})

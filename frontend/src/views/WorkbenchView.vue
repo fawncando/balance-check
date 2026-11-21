@@ -96,7 +96,9 @@ async function startUpload() {
       }
     })
     ElMessage.info('上传完成，开始识别九次称量')
-    const analyzed = await http.post(`/videos/${uploaded.id}/analyze`)
+    await http.post(`/videos/${uploaded.id}/analyze`)
+    ElMessage.info('识别任务已提交，正在后台处理')
+    const analyzed = await waitForAnalysis(uploaded.id)
     selectedFile.value = null
     progress.value = 0
     await loadVideos()
@@ -116,7 +118,8 @@ async function startUpload() {
 async function analyzeVideo(row) {
   analyzingId.value = row.id
   try {
-    const analyzed = await http.post(`/videos/${row.id}/analyze`)
+    await http.post(`/videos/${row.id}/analyze`)
+    const analyzed = await waitForAnalysis(row.id)
     await loadVideos()
     if (analyzed.status !== 'ANALYZED' || !analyzed.calibrationId) {
       ElMessage.error(analyzed.message || '识别失败')
@@ -129,6 +132,17 @@ async function analyzeVideo(row) {
   } finally {
     analyzingId.value = null
   }
+}
+
+async function waitForAnalysis(videoId) {
+  for (let attempt = 0; attempt < 600; attempt += 1) {
+    const video = await http.get(`/videos/${videoId}`)
+    if (video.status === 'ANALYZED' || video.status === 'FAILED') {
+      return video
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+  throw new Error('视频识别超时，请稍后刷新列表查看状态')
 }
 
 async function removeVideo(row) {

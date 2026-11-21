@@ -114,8 +114,20 @@ public class VideoService {
         return videoMapper.findByUploader(user.getId());
     }
 
-    public VideoView analyze(Long id, SessionUser user, String ip) {
-        return recognitionService.analyze(id, user, ip);
+    public VideoView startAnalysis(Long id, SessionUser user, String ip) {
+        return recognitionService.startAnalysis(id, user, ip);
+    }
+
+    public VideoView get(Long id, SessionUser user) {
+        VideoView view = videoMapper.findViewById(id);
+        if (view == null) {
+            throw new BizException(404, "视频不存在");
+        }
+        Video video = videoMapper.findById(id);
+        if (user.isInspector() && !video.getUploaderId().equals(user.getId())) {
+            throw new BizException(403, "只能查看自己上传的视频");
+        }
+        return view;
     }
 
     public void delete(Long id, SessionUser user, String ip) {

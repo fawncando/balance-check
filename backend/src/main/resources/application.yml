@@ -33,3 +33,9 @@ app:
     script-path: ${APP_RECOGNITION_SCRIPT:../analysis/analyze_video.py}
     ffmpeg-command: ${APP_RECOGNITION_FFMPEG:ffmpeg}
     timeout-seconds: ${APP_RECOGNITION_TIMEOUT:600}
+    device-profiles:
+      F001:
+        - f001
+      F002:
+        - f002a
+        - f002b

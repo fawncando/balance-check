@@ -40,9 +40,16 @@ if (-not $DryRun -and -not $Password) {
 Write-Host ("== 初始化数据库 {0}:{1} ==" -f $Server, $Port) -ForegroundColor Cyan
 $env:MYSQL_PWD = $Password
 try {
-    foreach ($step in @(
+    $steps = @(
             @{ Name = 'schema.sql'; File = $SchemaFile },
-            @{ Name = 'seed.sql'; File = $SeedFile })) {
+            @{ Name = 'seed.sql'; File = $SeedFile })
+    $migrationDir = Join-Path $repo 'database\migrations'
+    if (Test-Path $migrationDir) {
+        Get-ChildItem $migrationDir -Filter '*.sql' | Sort-Object Name | ForEach-Object {
+            $steps += @{ Name = $_.Name; File = $_.FullName }
+        }
+    }
+    foreach ($step in $steps) {
         $commandLine = 'mysql -h {0} -P {1} -u {2} --default-character-set=utf8mb4 < "{3}"' -f $Server, $Port, $User, $step.File
         Write-Host ("-> {0}" -f $step.Name)
         if ($DryRun) {

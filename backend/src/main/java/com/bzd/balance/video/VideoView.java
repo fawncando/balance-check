@@ -1,5 +1,6 @@
 package com.bzd.balance.video;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class VideoView {
@@ -15,6 +16,11 @@ public class VideoView {
     private LocalDateTime uploadedAt;
     private String status;
     private String message;
+    private String personCard;
+    private Boolean identityVerified;
+    private String analysisProfile;
+    private BigDecimal analysisConfidence;
+    private Integer anomalyFrames;
 
     public Long getId() {
         return id;
@@ -103,4 +109,15 @@ public class VideoView {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    public String getPersonCard() { return personCard; }
+    public void setPersonCard(String personCard) { this.personCard = personCard; }
+    public Boolean getIdentityVerified() { return identityVerified; }
+    public void setIdentityVerified(Boolean identityVerified) { this.identityVerified = identityVerified; }
+    public String getAnalysisProfile() { return analysisProfile; }
+    public void setAnalysisProfile(String analysisProfile) { this.analysisProfile = analysisProfile; }
+    public BigDecimal getAnalysisConfidence() { return analysisConfidence; }
+    public void setAnalysisConfidence(BigDecimal analysisConfidence) { this.analysisConfidence = analysisConfidence; }
+    public Integer getAnomalyFrames() { return anomalyFrames; }
+    public void setAnomalyFrames(Integer anomalyFrames) { this.anomalyFrames = anomalyFrames; }
 }

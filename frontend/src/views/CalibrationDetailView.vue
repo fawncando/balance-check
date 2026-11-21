@@ -127,7 +127,7 @@ async function reopen() {
 }
 
 function exportSheet() {
-  window.open(`/api/calibrations/export?id=${record.value.id}`, '_blank', 'noopener')
+  window.open(`/api/calibrations/${record.value.id}/pdf`, '_blank', 'noopener')
 }
 </script>
 
@@ -141,12 +141,28 @@ function exportSheet() {
         <el-button v-if="canReview" type="success" @click="approve">复核通过</el-button>
         <el-button v-if="canReview" type="danger" plain @click="reject">退回</el-button>
         <el-button v-if="canReopen" type="warning" plain @click="reopen">解锁</el-button>
-        <el-button v-if="canExport" @click="exportSheet">记录表</el-button>
+        <el-button v-if="canExport" @click="exportSheet">下载 PDF</el-button>
         <el-button link @click="router.push('/records')">返回列表</el-button>
       </div>
     </div>
 
     <div v-if="record">
+      <el-alert
+        v-if="record.videoId && record.identityVerified !== true"
+        title="视频未检测到与检验人员一致的人员卡，请人工核验身份"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px"
+      />
+      <el-alert
+        v-if="record.videoId && Number(record.analysisConfidence || 0) < 55"
+        :title="`识别置信度较低：${record.analysisConfidence || 0}%，异常帧 ${record.anomalyFrames || 0}`"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px"
+      />
       <div class="verdict" :class="record.externalResult === '是' ? 'ok' : 'bad'">
         <div>
           <div class="v-main">{{ record.externalResult === '是' ? '外部校正通过' : '外部校正不通过' }}</div>

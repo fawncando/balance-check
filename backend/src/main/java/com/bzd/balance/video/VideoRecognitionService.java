@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 
 import com.bzd.balance.auth.SessionUser;
@@ -36,6 +38,8 @@ public class VideoRecognitionService {
     private final CalibrationService calibrationService;
     private final RecognitionProcessService recognitionProcessService;
     private final AuditService auditService;
+    private final RecognitionProperties recognitionProperties;
+    private final TaskExecutor recognitionExecutor;
     private final Path uploadRoot;
 
     public VideoRecognitionService(VideoMapper videoMapper,
@@ -45,6 +49,8 @@ public class VideoRecognitionService {
                                    CalibrationService calibrationService,
                                    RecognitionProcessService recognitionProcessService,
                                    AuditService auditService,
+                                   RecognitionProperties recognitionProperties,
+                                   @Qualifier("recognitionExecutor") TaskExecutor recognitionExecutor,
                                    StorageService storageService) {
         this.videoMapper = videoMapper;
         this.balanceMapper = balanceMapper;
@@ -53,10 +59,12 @@ public class VideoRecognitionService {
         this.calibrationService = calibrationService;
         this.recognitionProcessService = recognitionProcessService;
         this.auditService = auditService;
+        this.recognitionProperties = recognitionProperties;
+        this.recognitionExecutor = recognitionExecutor;
         this.uploadRoot = storageService.getRoot();
     }
 
-    public VideoView analyze(Long videoId, SessionUser user, String ip) {
+    public VideoView startAnalysis(Long videoId, SessionUser user, String ip) {
         Video video = videoMapper.findById(videoId);
         if (video == null) {
             throw new BizException(404, "视频不存在");
@@ -81,8 +89,7 @@ public class VideoRecognitionService {
         if (video.getBalanceId() == null) {
             throw new BizException("视频未关联天平，不能识别");
         }
-        Balance balance = balanceMapper.findById(video.getBalanceId());
-        if (balance == null) {
+        if (balanceMapper.findById(video.getBalanceId()) == null) {
             throw new BizException("视频关联的天平不存在");
         }
 
@@ -94,40 +101,57 @@ public class VideoRecognitionService {
             throw new BizException("视频状态已变化，请刷新后重试");
         }
 
+        recognitionExecutor.execute(() -> runAnalysis(videoId, user, ip));
+        return videoMapper.findViewById(videoId);
+    }
+
+    private void runAnalysis(Long videoId, SessionUser user, String ip) {
         try {
+            Video video = videoMapper.findById(videoId);
+            Balance balance = balanceMapper.findById(video.getBalanceId());
+            Path videoPath = uploadRoot.resolve(video.getRelativePath()).normalize();
             RecognitionResult best = recognizeBest(videoPath, balance.getCode());
             if (best == null || best.getWeighings() == null
                     || best.getWeighings().size() != 9) {
                 throw new BizException("未识别出完整的九次称量，请检查视频与天平选择");
             }
-            CalibrationDtos.RecordView record = createDraft(video, best, user, ip);
-            videoMapper.updateStatus(videoId, "ANALYZED",
-                    "识别完成（" + best.getProfile() + "），已生成记录 "
-                            + record.getRecordNo());
+
+            String card = best.getPersonCard();
+            boolean identityVerified = card != null && user.getCardNo() != null
+                    && card.equalsIgnoreCase(user.getCardNo());
+            if (card != null && !identityVerified) {
+                throw new BizException("人员卡号 " + card + " 与当前登录账号 "
+                        + user.getCardNo() + " 不一致");
+            }
+
+            CalibrationDtos.RecordView record = createDraft(
+                    video, best, identityVerified, user, ip);
+            String identityMessage = identityVerified
+                    ? "，人员卡核验通过"
+                    : "，未检测到人员卡，需人工核验";
+            String reviewMessage = Boolean.TRUE.equals(best.getNeedsReview())
+                    ? "，识别置信度偏低，需重点复核"
+                    : "";
+            String message = "识别完成（" + best.getProfile() + "），已生成记录 "
+                    + record.getRecordNo() + identityMessage + reviewMessage;
+            videoMapper.completeAnalysis(videoId, limit(message, 500), card,
+                    identityVerified, best.getProfile(), best.getConfidence(),
+                    best.getAnomalyFrames());
             auditService.log(user.getId(), "VIDEO_ANALYZE", "VIDEO",
                     String.valueOf(videoId),
                     best.getProfile() + " -> " + record.getRecordNo(), ip);
-            return videoMapper.findViewById(videoId);
         } catch (RuntimeException ex) {
             String message = limit(ex.getMessage() == null ? "识别失败" : ex.getMessage(), 500);
             videoMapper.updateStatus(videoId, "FAILED", message);
             auditService.log(user.getId(), "VIDEO_ANALYZE_FAILED", "VIDEO",
                     String.valueOf(videoId), message, ip);
-            VideoView failed = videoMapper.findViewById(videoId);
-            if (failed == null) {
-                throw ex;
-            }
-            return failed;
         }
     }
 
     private RecognitionResult recognizeBest(Path videoPath, String balanceCode) {
-        List<String> profiles;
-        if ("F001".equalsIgnoreCase(balanceCode)) {
-            profiles = List.of("f001");
-        } else if ("F002".equalsIgnoreCase(balanceCode)) {
-            profiles = List.of("f002a", "f002b");
-        } else {
+        List<String> profiles = recognitionProperties.getDeviceProfiles()
+                .get(balanceCode.toUpperCase(java.util.Locale.ROOT));
+        if (profiles == null || profiles.isEmpty()) {
             throw new BizException("暂不支持天平型号 " + balanceCode);
         }
 
@@ -154,6 +178,7 @@ public class VideoRecognitionService {
 
     private CalibrationDtos.RecordView createDraft(Video video,
                                                    RecognitionResult result,
+                                                   boolean identityVerified,
                                                    SessionUser user,
                                                    String ip) {
         BalanceView balance = balanceService.get(video.getBalanceId());
@@ -165,7 +190,15 @@ public class VideoRecognitionService {
         request.setBalanceId(video.getBalanceId());
         request.setVideoId(video.getId());
         request.setCalibrationTime(calibrationTime);
-        request.setRemark("视频自动识别生成，请人工确认清洁、水平调节与过程信息");
+        StringBuilder remark = new StringBuilder(
+                "视频自动识别生成，请人工确认清洁、水平调节与过程信息");
+        if (!identityVerified) {
+            remark.append("；未检测到人员卡，请人工核验身份");
+        }
+        if (Boolean.TRUE.equals(result.getNeedsReview())) {
+            remark.append("；识别置信度偏低或异常帧较多，请重点复核");
+        }
+        request.setRemark(remark.toString());
         request.setMeasurements(toMeasurements(balance, result, calibrationTime));
         return calibrationService.create(request, user, ip);
     }
@@ -197,6 +230,7 @@ public class VideoRecognitionService {
             input.setMeasuredAt(calibrationTime.plusSeconds(weighing.getStartSec())
                     .withSecond(0).withNano(0));
             input.setVideoSecond(weighing.getStartSec());
+            input.setConfidence(weighing.getConfidence());
             input.setManuallyCorrected(false);
             input.setRawText(displayValue.stripTrailingZeros().toPlainString()
                     + " " + (displayMg ? "mg" : "g"));

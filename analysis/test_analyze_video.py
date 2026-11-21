@@ -2,12 +2,16 @@
 
 import os
 import sys
+import tempfile
 import unittest
+
+import cv2
+import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from analyze_video import nominal_of, sartorius_value  # noqa: E402
+from analyze_video import PROFILES, detect_person_card, nominal_of, sartorius_value  # noqa: E402
 
 
 class SartoriusValueTest(unittest.TestCase):
@@ -33,6 +37,19 @@ class SartoriusValueTest(unittest.TestCase):
         self.assertEqual(nominal_of(100.0008, nominals), 100)
         self.assertEqual(nominal_of(20.0001, nominals), 20)
         self.assertEqual(nominal_of(2.00008, nominals), 2)
+
+    def test_profiles_are_data_driven(self):
+        self.assertEqual(set(PROFILES), {"f001", "f002a", "f002b"})
+        self.assertEqual(PROFILES["f002b"]["decoder"], "sartorius_mixed")
+
+    def test_person_card_qr_is_detected(self):
+        qr = cv2.QRCodeEncoder.create().encode("RY-001")
+        image = np.full((480, 320), 230, dtype=np.uint8)
+        image[80:280, 80:280] = cv2.resize(qr, (200, 200))
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "frame.jpg")
+            cv2.imwrite(path, image)
+            self.assertEqual(detect_person_card([path]), "RY-001")
 
 
 if __name__ == "__main__":

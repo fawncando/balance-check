@@ -1,5 +1,6 @@
 package com.bzd.balance.video;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Delete;
@@ -25,7 +26,9 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id,
-                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message
+                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message,
+                   v.person_card, v.identity_verified, v.analysis_profile,
+                   v.analysis_confidence, v.anomaly_frames
             FROM video v
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
@@ -37,7 +40,9 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id,
-                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message
+                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message,
+                   v.person_card, v.identity_verified, v.analysis_profile,
+                   v.analysis_confidence, v.anomaly_frames
             FROM video v
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
@@ -53,7 +58,9 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id,
-                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message
+                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message,
+                   v.person_card, v.identity_verified, v.analysis_profile,
+                   v.analysis_confidence, v.anomaly_frames
             FROM video v
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
@@ -77,6 +84,22 @@ public interface VideoMapper {
     int updateStatus(@Param("id") Long id,
                      @Param("status") String status,
                      @Param("message") String message);
+
+    @Update("""
+            UPDATE video
+            SET status = 'ANALYZED', message = #{message},
+                person_card = #{personCard}, identity_verified = #{identityVerified},
+                analysis_profile = #{profile}, analysis_confidence = #{confidence},
+                anomaly_frames = #{anomalyFrames}
+            WHERE id = #{id}
+            """)
+    int completeAnalysis(@Param("id") Long id,
+                         @Param("message") String message,
+                         @Param("personCard") String personCard,
+                         @Param("identityVerified") Boolean identityVerified,
+                         @Param("profile") String profile,
+                         @Param("confidence") BigDecimal confidence,
+                         @Param("anomalyFrames") Integer anomalyFrames);
 
     @Delete("DELETE FROM video WHERE id = #{id}")
     void deleteById(@Param("id") Long id);

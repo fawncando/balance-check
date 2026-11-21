@@ -47,8 +47,13 @@ public class VideoController {
                                           HttpSession session,
                                           HttpServletRequest request) {
         SessionUser user = CurrentUser.require(session);
-        return ApiResponse.ok(videoService.analyze(
+        return ApiResponse.ok(videoService.startAnalysis(
                 id, user, request.getRemoteAddr()));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<VideoView> get(@PathVariable Long id, HttpSession session) {
+        return ApiResponse.ok(videoService.get(id, CurrentUser.require(session)));
     }
 
     @DeleteMapping("/{id}")

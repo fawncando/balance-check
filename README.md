@@ -176,7 +176,9 @@ node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test
                                           # 前端换算与复核状态（12 项，不依赖 npm 安装）
 ```
 
-浏览器端另有 8 项 Playwright 检查（九行生成、实时判定、提交、详情、列表、控制台），截图在 `docs/screenshots`。
+浏览器端可用 `scripts/browser-acceptance.ps1` 连接本机 Edge 调试端口，验证登录、上传、
+自动识别、九行草稿、提交复核和记录查询，并更新 `docs/screenshots`。本次真实浏览器
+验收已通过。
 
 交付相关脚本：
 

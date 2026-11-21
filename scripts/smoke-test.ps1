@@ -98,8 +98,14 @@ try {
     Check '退出后会话失效（401）' ($r.StatusCode -eq 401) "status=$($r.StatusCode)"
 
 } finally {
-    if ($tempFile -and (Test-Path $tempFile)) {
-        Remove-Item -LiteralPath $tempFile -Force -ErrorAction SilentlyContinue
+    if ($tempFile) {
+        try {
+            if ([System.IO.File]::Exists($tempFile)) {
+                [System.IO.File]::Delete($tempFile)
+            }
+        } catch {
+            Write-Host ("WARN  临时文件清理失败：{0}" -f $tempFile) -ForegroundColor Yellow
+        }
     }
 }
 

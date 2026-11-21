@@ -24,7 +24,12 @@ http.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       redirectToLogin(error.config?.url)
     }
-    const message = error.response?.data?.message || error.message || '网络异常'
+    const status = error.response?.status
+    let message = error.response?.data?.message
+    if (!message && status === 403) {
+      message = '没有权限执行该操作，请确认登录角色或访问来源'
+    }
+    message = message || error.message || '网络异常'
     return Promise.reject(new Error(message))
   }
 )

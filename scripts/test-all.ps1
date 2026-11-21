@@ -3,6 +3,7 @@
 param(
     [string]$BaseUrl = 'http://localhost:8081',
     [string]$JavaHome = $env:JAVA_HOME,
+    [string]$MavenRepo = $env:MAVEN_REPO_LOCAL,
     [switch]$SkipBuild,
     [switch]$SkipApi,
     [switch]$SkipFrontend
@@ -11,6 +12,9 @@ param(
 $ErrorActionPreference = 'Continue'
 $base = $BaseUrl.TrimEnd('/')
 $repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
+if (-not $MavenRepo -and (Test-Path 'D:\develop\m2repo')) {
+    $MavenRepo = 'D:\develop\m2repo'
+}
 $hostExe = (Get-Process -Id $PID).Path
 $script:results = @()
 
@@ -49,7 +53,11 @@ if ($SkipBuild) {
     Push-Location (Join-Path $repo 'backend')
     try {
         if ($mvnJavaHome) { $env:JAVA_HOME = $mvnJavaHome }
-        cmd /c '.\mvnw.cmd -o -q -DskipTests compile'
+        $mvnArgs = @('-o', '-q', '-DskipTests', 'compile')
+        if ($MavenRepo) {
+            $mvnArgs += "-Dmaven.repo.local=$MavenRepo"
+        }
+        & .\mvnw.cmd @mvnArgs
         $buildCode = $LASTEXITCODE
     } finally {
         Pop-Location

@@ -3,6 +3,7 @@
 param(
     [string]$Version = '',
     [string]$JavaHome = $env:JAVA_HOME,
+    [string]$MavenRepo = $env:MAVEN_REPO_LOCAL,
     [string]$OutputRoot = '',
     [switch]$SkipBackend,
     [switch]$SkipFrontend,
@@ -13,6 +14,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
 if (-not $OutputRoot) { $OutputRoot = Join-Path $repo 'dist' }
+if (-not $MavenRepo -and (Test-Path 'D:\develop\m2repo')) {
+    $MavenRepo = 'D:\develop\m2repo'
+}
 
 if (-not $Version) {
     $pom = Get-Content (Join-Path $repo 'backend\pom.xml') -Raw
@@ -47,7 +51,11 @@ if (-not $SkipBackend) {
     Push-Location (Join-Path $repo 'backend')
     try {
         if ($mvnJavaHome) { $env:JAVA_HOME = $mvnJavaHome }
-        cmd /c '.\mvnw.cmd -o -DskipTests package'
+        $mvnArgs = @('-o', '-DskipTests', 'package')
+        if ($MavenRepo) {
+            $mvnArgs += "-Dmaven.repo.local=$MavenRepo"
+        }
+        & .\mvnw.cmd @mvnArgs
         if ($LASTEXITCODE -ne 0) { throw "后端构建失败（mvnw exit $LASTEXITCODE）" }
     } finally {
         Pop-Location

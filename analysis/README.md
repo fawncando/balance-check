@@ -1,41 +1,83 @@
-# 视频分析服务（批次 4）
+# 天平校验视频识别（批次 4）
 
-输入：一次校验的视频文件 + 天平配置（量程、分度值、砝码组）。
-输出：识别结果 JSON，结构见 `testing/golden/README.md`，可直接用 `testing/evaluate.py` 评测。
+输入一段校验视频，输出九次称量读数和整机判定。后端通过
+`POST /api/videos/{id}/analyze` 自动调用本目录入口并生成校验草稿。
 
-## 处理流水线
-
-1. 抽帧：ffmpeg 按 1 fps 抽帧，裁剪出天平显示屏区域。
-2. 稳定段：相邻帧灰度差小于阈值视为同一读数，连续 ≥3 秒的段为候选稳定读数。
-3. 数字定位：在显示屏区域内找亮/暗连通域，按“上半格 + 下半格”配对成数字框（七段码数字在中间段熄灭时会分成上下两块）。
-4. 七段解码：对每个数字框采样 7 个段，查表得到 0-9；小数点是数字底部的独立小块。
-5. 单位：识别显示屏上的 g / mg 标识；以天平显示为准。
-6. 时间：用稳定段的起始秒数换算为 HH:mm。
-
-## 当前环境与依赖
-
-本机可用：Python 3、numpy 2.3.5、Pillow 12.3.0、ffmpeg（D:\oopz\ffmpeg.exe）。
-当前不可用：OpenCV、pyzbar、Tesseract；PyPI 访问不稳定。
-
-因此第 3、4 步用 numpy 实现，不依赖新库；二维码识别需要 OpenCV 或 pyzbar，等离线安装包准备好后再接入（视频里目前也没看到人员二维码卡）。
-
-## 脚本
+## 一、安装依赖
 
 ```powershell
-python analysis\locate_digits.py <帧图片> --roi 80,590,400,180
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-输出数字框坐标与七段采样结果，用于校准段位置；校准结果写入 `analysis/display_profile.json`。
+另需 ffmpeg，可通过 `--ffmpeg`、`APP_RECOGNITION_FFMPEG` 或环境变量
+`FFMPEG` 指定路径。
 
-## 当前进度（识别原型 v0.1）
-
-已在第一条视频的稳定段帧上跑通数字定位：在 0.0000 的稳定段帧中定位到 5 个数字框（间距 33 px、字高 42 px），其中 4 个正确解码为 0；首个数字框因包围盒偏宽、右侧探针落在背景上而解码失败。称量段帧有 7 位数字，目前只配对到 4 个框，说明配对规则还需要按“整块数字区”而不是单个半格来约束。
-
-结论：七段码路线可行，但还没有达到能产出九次读数的程度。下一步需要为每台天平建立显示档案（数字区范围、字距、七段探针坐标、单位位置），再接入稳定段批量解码。
-
-## 依赖安装
+## 二、运行
 
 ```powershell
-python -m venv analysis\.venv
-analysis\.venv\Scripts\python.exe -m pip install -r analysis\requirements.txt
+python analyze_video.py `
+  --video D:\videos\Balance_1_second.mp4 `
+  --profile f002b `
+  --ffmpeg D:\tools\ffmpeg.exe `
+  --out result.json
 ```
+
+三个显示档案：
+
+| profile | 设备 | 显示类型 |
+| --- | --- | --- |
+| f001 | F001（220 g，200/50/10 g） | Mettler Toledo 图形屏 |
+| f002a | F002（120 g 量程，100 g；40 g 量程，20/2 g） | Sartorius 七段屏，显示 g |
+| f002b | F002（同上，第二量程显示 mg） | Sartorius 七段屏，g + mg |
+
+后端选择 F002 时会比较 `f002a` 与 `f002b`，采用能够解出更多完整称量的
+结果。
+
+## 三、小数点与单位规则
+
+`f002b` 的六位数字串存在显示歧义：
+
+- `20000.1 mg` 与 `2000.08 mg` 的数字串都是六位；
+- 小数点在画面中的位置不同，但小连通域检测容易受到其他标记干扰；
+- 显示屏采用右对齐，`20000.x mg` 的数字区起点约为 x=56，
+  `2000.0x mg` 的起点约为 x=86。
+
+因此该档案用数字区左边缘区分两种量程，再统一换算为 g。该规则不依赖
+称量顺序，适合固定机位拍摄。
+
+## 四、稳定段与判定
+
+- 按 1 fps 抽帧并裁剪显示屏区域。
+- 同一读数持续不少于 3 秒才进入候选稳定段。
+- 同一称量内末位跳动的相邻稳定段在 5 秒内合并。
+- 每个标称砝码选取最稳定的三个有效段，共输出九次称量。
+- 单次限度为标称值的 ±0.05%，任一次超差则整机 FAIL。
+
+## 五、已验证样本
+
+三条样本视频均输出九次读数并判定 PASS：
+
+- Balance_2：200.0009/200.0000/200.0009、
+  50.0003/50.0002/50.0003、10.0001×3
+- Balance_1_first：100.0004×3、20.0002×3、2.0001×3
+- Balance_1_second：100.0003/100.0003/100.0008、
+  20.0002/20.0001/20.0001、2.00008/2.00006/2.00008
+
+单元测试：
+
+```powershell
+python -m unittest discover -s analysis -p "test_*.py" -v
+```
+
+三段视频回归测试：
+
+```powershell
+python testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
+```
+
+## 六、限制
+
+- 当前只覆盖 F001、F002 的三段固定机位样本，新增设备或机位需要重新标定模板。
+- 人员二维码/人员卡识别尚未实现。
+- 后端当前以本机进程同步调用识别入口；多人并发场景建议改为任务队列。

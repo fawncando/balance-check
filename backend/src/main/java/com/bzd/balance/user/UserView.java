@@ -6,6 +6,8 @@ public class UserView {
     private String username;
     private String displayName;
     private String role;
+    private String cardNo;
+    private String status;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -15,4 +17,8 @@ public class UserView {
     public void setDisplayName(String displayName) { this.displayName = displayName; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public String getCardNo() { return cardNo; }
+    public void setCardNo(String cardNo) { this.cardNo = cardNo; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

@@ -1,14 +1,8 @@
 package com.bzd.balance.system;
 
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,27 +87,7 @@ public class MobileEntryService {
     }
 
     private String lanAddress() {
-        List<String> addresses = new ArrayList<>();
-        try {
-            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-            while (interfaces.hasMoreElements()) {
-                NetworkInterface network = interfaces.nextElement();
-                if (!network.isUp() || network.isLoopback() || network.isVirtual()) {
-                    continue;
-                }
-                Enumeration<InetAddress> values = network.getInetAddresses();
-                while (values.hasMoreElements()) {
-                    InetAddress address = values.nextElement();
-                    if (address instanceof Inet4Address && address.isSiteLocalAddress()) {
-                        addresses.add(address.getHostAddress());
-                    }
-                }
-            }
-        } catch (IOException ex) {
-            throw new BizException(500, "读取本机局域网地址失败：" + ex.getMessage());
-        }
-        return addresses.stream().sorted(Comparator.naturalOrder())
-                .findFirst().orElse("127.0.0.1");
+        return LanAddressResolver.resolve();
     }
 
     private Path resolveScript() {

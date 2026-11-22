@@ -1,4 +1,4 @@
-﻿# 批次 7 独立校验：天平清单校验规则（BalanceRulesCheck）
+﻿# 批次 7 独立校验：天平清单校验规则（BalanceRulesCheck）与局域网地址选择（LanAddressCheck）
 # 不依赖数据库与 Maven 测试插件；需先编译后端：cd backend; .\mvnw.cmd -o -DskipTests compile
 # 用法：pwsh -File scripts\batch7-unit-check.ps1 [-JavaHome <JDK 目录>] [-Classes <后端编译产物>]
 param(
@@ -49,8 +49,19 @@ $classJar = Join-Path $out 'backend-classes.jar'
 Write-Host "== 批次 7 独立校验 ==" -ForegroundColor Cyan
 
 & $jarTool cf $classJar -C $Classes .
-$compileOutput = & $javac -encoding UTF-8 -cp $classJar -d $out (Join-Path $repo 'scripts\BalanceRulesCheck.java') 2>&1
-if ($LASTEXITCODE -ne 0) { $compileOutput | Write-Host; exit $LASTEXITCODE }
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $java "-Dstdout.encoding=UTF-8" "-Dstderr.encoding=UTF-8" -cp "$classJar;$out" BalanceRulesCheck
-exit $LASTEXITCODE
+$failed = 0
+foreach ($checkName in @('BalanceRulesCheck', 'LanAddressCheck')) {
+    $source = Join-Path $repo ("scripts\{0}.java" -f $checkName)
+    $compileOutput = & $javac -encoding UTF-8 -cp $classJar -d $out $source 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $compileOutput | Write-Host
+        exit $LASTEXITCODE
+    }
+    & $java "-Dstdout.encoding=UTF-8" "-Dstderr.encoding=UTF-8" -cp "$classJar;$out" $checkName
+    if ($LASTEXITCODE -ne 0) { $failed++ }
+    Write-Host ""
+}
+
+exit $(if ($failed -eq 0) { 0 } else { 1 })

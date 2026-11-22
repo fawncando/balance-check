@@ -119,6 +119,7 @@ if ($SkipApi) {
     Invoke-Child '批次 5 冒烟（判定、草稿、提交锁定、双量程）' (Join-Path $repo 'scripts\batch5-test.ps1') @('-BaseUrl', $base)
     Invoke-Child '批次 6 冒烟（复核、退回、解锁、查询、导出）' (Join-Path $repo 'scripts\batch6-test.ps1') @('-BaseUrl', $base)
     Invoke-Child '批次 7 冒烟（清单维护、操作日志、模板）' (Join-Path $repo 'scripts\batch7-test.ps1') @('-BaseUrl', $base)
+    Invoke-Child '作废记录（管理员、锁定、查询与审计）' (Join-Path $repo 'scripts\void-test.ps1') @('-BaseUrl', $base)
 }
 
 Write-Host ""

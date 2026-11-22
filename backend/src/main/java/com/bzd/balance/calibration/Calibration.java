@@ -16,6 +16,9 @@ public class Calibration {
     private String externalResult;
     private String remark;
     private String status;
+    private Long voidedBy;
+    private String voidReason;
+    private LocalDateTime voidedAt;
     private LocalDateTime submittedAt;
 
     public Long getId() { return id; }
@@ -42,6 +45,12 @@ public class Calibration {
     public void setRemark(String remark) { this.remark = remark; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public Long getVoidedBy() { return voidedBy; }
+    public void setVoidedBy(Long voidedBy) { this.voidedBy = voidedBy; }
+    public String getVoidReason() { return voidReason; }
+    public void setVoidReason(String voidReason) { this.voidReason = voidReason; }
+    public LocalDateTime getVoidedAt() { return voidedAt; }
+    public void setVoidedAt(LocalDateTime voidedAt) { this.voidedAt = voidedAt; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
 }

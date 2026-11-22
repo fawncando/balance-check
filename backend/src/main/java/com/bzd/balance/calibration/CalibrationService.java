@@ -132,6 +132,33 @@ public class CalibrationService {
         return get(id, user);
     }
 
+    @Transactional
+    public CalibrationDtos.RecordView voidRecord(Long id,
+                                                 CalibrationDtos.VoidRequest request,
+                                                 SessionUser user,
+                                                 String ip) {
+        if (!user.isAdmin()) {
+            throw new BizException(403, "只有管理员可以作废校验记录");
+        }
+        Calibration record = requireRecord(id);
+        if ("VOIDED".equals(record.getStatus())) {
+            throw new BizException("该记录已经作废");
+        }
+        String reason = request == null ? null : trimToNull(request.getReason());
+        if (reason == null || reason.length() < 2) {
+            throw new BizException("作废必须填写明确原因");
+        }
+        if (reason.length() > 500) {
+            throw new BizException("作废原因不能超过 500 个字符");
+        }
+        if (calibrationMapper.voidRecord(id, user.getId(), reason) == 0) {
+            throw new BizException("记录状态已变化，请刷新后重试");
+        }
+        auditService.log(user.getId(), "CALIBRATION_VOID", "CALIBRATION",
+                String.valueOf(id), record.getRecordNo() + "：" + reason, ip);
+        return get(id, user);
+    }
+
     /** 记录详情：检验人员只能查看自己创建的记录，复核确认人员与管理员可以查看全部。 */
     public CalibrationDtos.RecordView get(Long id, SessionUser user) {
         CalibrationDtos.RecordView view = calibrationMapper.findView(id);

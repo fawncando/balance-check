@@ -49,7 +49,10 @@ public interface CalibrationMapper {
             SELECT c.id, c.record_no, c.balance_id, c.video_id,
                    v.person_card, v.identity_verified, v.analysis_confidence, v.anomaly_frames,
                    b.code AS balance_code, b.unique_no AS balance_unique_no,
-                   b.department, c.calibration_time, c.status, c.external_result, c.clean_ok, c.level_ok,
+                   b.department, c.calibration_time, c.status,
+                   c.voided_by, c.void_reason, c.voided_at,
+                   vu.display_name AS voided_by_name,
+                   c.external_result, c.clean_ok, c.level_ok,
                    c.internal_calibration_result, c.remark, c.inspector_id,
                    u.display_name AS inspector_name, c.submitted_at,
                    rv.reviewed_at AS reviewed_at, rv.result AS review_result, rv.comment AS review_comment,
@@ -60,6 +63,7 @@ public interface CalibrationMapper {
             LEFT JOIN video v ON v.id = c.video_id
             LEFT JOIN review rv ON rv.calibration_id = c.id
             LEFT JOIN sys_user ru ON ru.id = rv.reviewer_id
+            LEFT JOIN sys_user vu ON vu.id = c.voided_by
             WHERE c.id = #{id}
             """)
     CalibrationDtos.RecordView findView(@Param("id") Long id);
@@ -79,7 +83,10 @@ public interface CalibrationMapper {
             SELECT c.id, c.record_no, c.balance_id, c.video_id,
                    v.person_card, v.identity_verified, v.analysis_confidence, v.anomaly_frames,
                    b.code AS balance_code, b.unique_no AS balance_unique_no,
-                   b.department, c.calibration_time, c.status, c.external_result, c.clean_ok, c.level_ok,
+                   b.department, c.calibration_time, c.status,
+                   c.voided_by, c.void_reason, c.voided_at,
+                   vu.display_name AS voided_by_name,
+                   c.external_result, c.clean_ok, c.level_ok,
                    c.internal_calibration_result, c.remark, c.inspector_id,
                    u.display_name AS inspector_name, c.submitted_at,
                    rv.reviewed_at AS reviewed_at, rv.result AS review_result, rv.comment AS review_comment,
@@ -90,6 +97,7 @@ public interface CalibrationMapper {
             LEFT JOIN video v ON v.id = c.video_id
             LEFT JOIN review rv ON rv.calibration_id = c.id
             LEFT JOIN sys_user ru ON ru.id = rv.reviewer_id
+            LEFT JOIN sys_user vu ON vu.id = c.voided_by
             WHERE (#{inspectorId,jdbcType=BIGINT} IS NULL OR c.inspector_id = #{inspectorId,jdbcType=BIGINT})
               AND (#{balanceId,jdbcType=BIGINT} IS NULL OR c.balance_id = #{balanceId,jdbcType=BIGINT})
               AND (#{status,jdbcType=VARCHAR} IS NULL OR c.status = #{status,jdbcType=VARCHAR})
@@ -140,4 +148,13 @@ public interface CalibrationMapper {
             WHERE id = #{id} AND status = 'REVIEWED'
             """)
     int reopen(Long id);
+
+    @Update("""
+            UPDATE calibration
+            SET status = 'VOIDED', voided_by = #{userId}, void_reason = #{reason}, voided_at = NOW()
+            WHERE id = #{id} AND status <> 'VOIDED'
+            """)
+    int voidRecord(@Param("id") Long id,
+                   @Param("userId") Long userId,
+                   @Param("reason") String reason);
 }

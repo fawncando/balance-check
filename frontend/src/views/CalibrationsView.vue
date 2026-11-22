@@ -89,6 +89,7 @@ function open(row) {
           <el-option label="草稿" value="DRAFT" />
           <el-option label="待复核" value="SUBMITTED" />
           <el-option label="已复核" value="REVIEWED" />
+          <el-option label="已作废" value="VOIDED" />
         </el-select>
         <el-date-picker
           v-model="dateRange"

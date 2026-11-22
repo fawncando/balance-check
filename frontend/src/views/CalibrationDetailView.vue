@@ -15,11 +15,13 @@ const CHART = { width: 660, height: 200, padX: 46, padY: 26 }
 
 const state = computed(() => reviewStateOf(record.value?.status, record.value?.reviewResult))
 const isReviewer = computed(() => ['REVIEWER', 'ADMIN'].includes(auth.user?.role))
+const isAdmin = computed(() => auth.user?.role === 'ADMIN')
 const isOwner = computed(() => record.value?.inspectorId != null && record.value.inspectorId === auth.user?.id)
 const canEdit = computed(() => record.value?.status === 'DRAFT' && (isOwner.value || auth.user?.role === 'ADMIN'))
 const canReview = computed(() => isReviewer.value && record.value?.status === 'SUBMITTED')
 const canReopen = computed(() => isReviewer.value && record.value?.status === 'REVIEWED')
 const canExport = computed(() => isReviewer.value && !!record.value)
+const canVoid = computed(() => isAdmin.value && record.value?.status !== 'VOIDED')
 
 const series = computed(() => deviationSeries(record.value?.measurements))
 const plotted = computed(() => series.value.filter((item) => item.pct !== null))
@@ -126,6 +128,29 @@ async function reopen() {
   }
 }
 
+async function voidRecord() {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '作废后记录将永久锁定，九次数据和审计日志会保留。请填写作废原因。',
+      `作废 ${record.value.recordNo}`,
+      {
+        inputPlaceholder: '例如：现场复核确认该记录引用错误天平，原结论无效',
+        inputType: 'textarea',
+        inputValidator: (text) => (text && text.trim().length >= 2 ? true : '作废原因至少填写 2 个字符'),
+        confirmButtonText: '确认作废',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    record.value = await http.post(`/calibrations/${record.value.id}/void`, {
+      reason: value.trim()
+    })
+    ElMessage.success('记录已作废并锁定')
+  } catch (err) {
+    if (!isCancel(err)) ElMessage.error(err.message || '作废未完成')
+  }
+}
+
 function exportSheet() {
   window.open(`/api/calibrations/${record.value.id}/pdf`, '_blank', 'noopener')
 }
@@ -141,12 +166,21 @@ function exportSheet() {
         <el-button v-if="canReview" type="success" @click="approve">复核通过</el-button>
         <el-button v-if="canReview" type="danger" plain @click="reject">退回</el-button>
         <el-button v-if="canReopen" type="warning" plain @click="reopen">解锁</el-button>
+        <el-button v-if="canVoid" type="danger" plain @click="voidRecord">作废记录</el-button>
         <el-button v-if="canExport" @click="exportSheet">下载 PDF</el-button>
         <el-button link @click="router.push('/records')">返回列表</el-button>
       </div>
     </div>
 
     <div v-if="record">
+      <el-alert
+        v-if="record.status === 'VOIDED'"
+        :title="`该记录已作废：${record.voidReason || '-'}（${record.voidedByName || '-'}，${record.voidedAt || '-'}）`"
+        type="error"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px"
+      />
       <el-alert
         v-if="record.videoId && record.identityVerified !== true"
         title="视频未检测到与检验人员一致的人员卡，请人工核验身份"
@@ -197,6 +231,11 @@ function exportSheet() {
           <div><span class="k">水平调节：</span>{{ record.levelOk ? '是' : '否' }}</div>
           <div><span class="k">内部校正：</span>{{ record.internalCalibrationResult }}</div>
           <div><span class="k">备注：</span>{{ record.remark }}</div>
+          <template v-if="record.status === 'VOIDED'">
+            <div><span class="k">作废人：</span>{{ record.voidedByName || '-' }}</div>
+            <div><span class="k">作废时间：</span>{{ record.voidedAt || '-' }}</div>
+            <div class="full"><span class="k">作废原因：</span>{{ record.voidReason || '-' }}</div>
+          </template>
         </div>
       </div>
 
@@ -216,6 +255,9 @@ function exportSheet() {
         </div>
         <div class="advice" :class="state.type" v-if="record.status === 'REVIEWED'">
           记录已锁定为“已复核”，如需修改须由复核人员解锁。
+        </div>
+        <div class="advice danger" v-if="record.status === 'VOIDED'">
+          记录已作废并永久锁定，九次明细和审计日志仅用于追溯。
         </div>
       </div>
 

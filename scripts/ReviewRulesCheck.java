@@ -35,12 +35,16 @@ public class ReviewRulesCheck {
         check("通过即锁定，退回回到草稿",
                 "REVIEWED".equals(ReviewRules.statusAfterReview(ReviewRules.APPROVED))
                         && "DRAFT".equals(ReviewRules.statusAfterReview(ReviewRules.REJECTED)));
-        check("记录状态只认三种取值",
+        check("记录状态包含已作废",
                 ReviewRules.isKnownStatus("DRAFT")
                         && ReviewRules.isKnownStatus("SUBMITTED")
                         && ReviewRules.isKnownStatus("REVIEWED")
+                        && ReviewRules.isKnownStatus("VOIDED")
                         && !ReviewRules.isKnownStatus("APPROVED")
                         && !ReviewRules.isKnownStatus(""));
+        check("作废记录不能复核或解锁",
+                !ReviewRules.canReview("VOIDED")
+                        && !ReviewRules.canReopen("VOIDED"));
 
         System.out.println();
         System.out.println("结果：" + pass + " 通过，" + fail + " 失败");

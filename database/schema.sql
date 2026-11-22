@@ -115,7 +115,10 @@ CREATE TABLE IF NOT EXISTS calibration (
     external_result             VARCHAR(10)  NULL COMMENT '是/否',
     remark                      VARCHAR(500) NULL DEFAULT '无',
     status                      VARCHAR(20)  NOT NULL DEFAULT 'DRAFT'
-                                COMMENT 'DRAFT/SUBMITTED/REVIEWED',
+                                COMMENT 'DRAFT/SUBMITTED/REVIEWED/VOIDED',
+    voided_by                   BIGINT       NULL COMMENT '作废操作人',
+    void_reason                 VARCHAR(500) NULL COMMENT '作废原因',
+    voided_at                   DATETIME     NULL COMMENT '作废时间',
     submitted_at                DATETIME     NULL,
     reviewed_at                 DATETIME     NULL,
     created_at                  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -124,9 +127,11 @@ CREATE TABLE IF NOT EXISTS calibration (
     UNIQUE KEY uk_calibration_no (record_no),
     KEY idx_cal_balance_time (balance_id, calibration_time),
     KEY idx_cal_status (status),
+    KEY idx_cal_voided_by (voided_by),
     CONSTRAINT fk_cal_balance FOREIGN KEY (balance_id) REFERENCES balance (id),
     CONSTRAINT fk_cal_video FOREIGN KEY (video_id) REFERENCES video (id),
-    CONSTRAINT fk_cal_inspector FOREIGN KEY (inspector_id) REFERENCES sys_user (id)
+    CONSTRAINT fk_cal_inspector FOREIGN KEY (inspector_id) REFERENCES sys_user (id),
+    CONSTRAINT fk_cal_voided_by FOREIGN KEY (voided_by) REFERENCES sys_user (id)
 ) ENGINE = InnoDB COMMENT = '校验记录';
 
 CREATE TABLE IF NOT EXISTS calibration_measurement (

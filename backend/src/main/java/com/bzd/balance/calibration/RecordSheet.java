@@ -74,6 +74,12 @@ public final class RecordSheet {
         html.append("<table class=\"kv\">\n");
         kv(html, "复核人员", str(record.getReviewerName()), "复核时间", format(record.getReviewedAt(), MINUTE));
         html.append("<tr><th>复核意见</th><td colspan=\"3\">").append(str(record.getReviewComment())).append("</td></tr>\n");
+        if ("VOIDED".equals(record.getStatus())) {
+            kv(html, "作废人员", str(record.getVoidedByName()), "作废时间",
+                    format(record.getVoidedAt(), MINUTE));
+            html.append("<tr><th>作废原因</th><td colspan=\"3\">")
+                    .append(str(record.getVoidReason())).append("</td></tr>\n");
+        }
         html.append("<tr><th>备注</th><td colspan=\"3\">").append(str(record.getRemark())).append("</td></tr>\n");
         html.append("</table>\n");
 
@@ -137,6 +143,7 @@ public final class RecordSheet {
             case "DRAFT" -> "草稿";
             case "SUBMITTED" -> "待复核";
             case "REVIEWED" -> "已复核";
+            case "VOIDED" -> "已作废";
             default -> status;
         };
     }

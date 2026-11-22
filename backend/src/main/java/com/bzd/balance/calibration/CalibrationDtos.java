@@ -110,6 +110,14 @@ public final class CalibrationDtos {
         public void setComment(String comment) { this.comment = comment; }
     }
 
+    /** 管理员作废记录：原因必填，记录和审计日志保留。 */
+    public static class VoidRequest {
+        private String reason;
+
+        public String getReason() { return reason; }
+        public void setReason(String reason) { this.reason = reason; }
+    }
+
     public static class RecordView {
         private Long id;
         private String recordNo;
@@ -124,6 +132,10 @@ public final class CalibrationDtos {
         private String department;
         private LocalDateTime calibrationTime;
         private String status;
+        private Long voidedBy;
+        private String voidedByName;
+        private String voidReason;
+        private LocalDateTime voidedAt;
         private String externalResult;
         private Boolean cleanOk;
         private Boolean levelOk;
@@ -164,6 +176,14 @@ public final class CalibrationDtos {
         public void setCalibrationTime(LocalDateTime calibrationTime) { this.calibrationTime = calibrationTime; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
+        public Long getVoidedBy() { return voidedBy; }
+        public void setVoidedBy(Long voidedBy) { this.voidedBy = voidedBy; }
+        public String getVoidedByName() { return voidedByName; }
+        public void setVoidedByName(String voidedByName) { this.voidedByName = voidedByName; }
+        public String getVoidReason() { return voidReason; }
+        public void setVoidReason(String voidReason) { this.voidReason = voidReason; }
+        public LocalDateTime getVoidedAt() { return voidedAt; }
+        public void setVoidedAt(LocalDateTime voidedAt) { this.voidedAt = voidedAt; }
         public String getExternalResult() { return externalResult; }
         public void setExternalResult(String externalResult) { this.externalResult = externalResult; }
         public Boolean getCleanOk() { return cleanOk; }

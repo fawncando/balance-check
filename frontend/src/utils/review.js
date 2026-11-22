@@ -6,7 +6,8 @@ export const LIMIT_PERCENT = LIMIT_RATE * 100
 const STATUS = {
   DRAFT: { text: '草稿', type: 'info', locked: false },
   SUBMITTED: { text: '待复核', type: 'warning', locked: false },
-  REVIEWED: { text: '已复核', type: 'success', locked: true }
+  REVIEWED: { text: '已复核', type: 'success', locked: true },
+  VOIDED: { text: '已作废', type: 'danger', locked: true }
 }
 
 /**
@@ -14,6 +15,7 @@ const STATUS = {
  * 退回后记录回到草稿但保留 REJECTED 结论；已复核被解锁后保留 APPROVED 结论。
  */
 export function reviewStateOf(status, reviewResult) {
+  if (status === 'VOIDED') return { ...STATUS.VOIDED }
   if (status === 'REVIEWED') return { ...STATUS.REVIEWED }
   if (status === 'SUBMITTED') return { ...STATUS.SUBMITTED }
   if (reviewResult === 'REJECTED') return { text: '已退回', type: 'danger', locked: false }

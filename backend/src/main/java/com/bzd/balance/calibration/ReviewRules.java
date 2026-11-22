@@ -18,9 +18,10 @@ public final class ReviewRules {
     public static final String STATUS_DRAFT = "DRAFT";
     public static final String STATUS_SUBMITTED = "SUBMITTED";
     public static final String STATUS_REVIEWED = "REVIEWED";
+    public static final String STATUS_VOIDED = "VOIDED";
 
     private static final Set<String> STATUSES =
-            Set.of(STATUS_DRAFT, STATUS_SUBMITTED, STATUS_REVIEWED);
+            Set.of(STATUS_DRAFT, STATUS_SUBMITTED, STATUS_REVIEWED, STATUS_VOIDED);
 
     private ReviewRules() {
     }

@@ -86,6 +86,18 @@ public class CalibrationController {
         return ApiResponse.ok(calibrationService.get(id, user));
     }
 
+    /** 管理员作废记录：保留数据与审计日志，作废后不可再编辑或复核。 */
+    @PostMapping("/{id}/void")
+    public ApiResponse<CalibrationDtos.RecordView> voidRecord(
+            @PathVariable Long id,
+            @RequestBody CalibrationDtos.VoidRequest request,
+            HttpSession session,
+            HttpServletRequest http) {
+        SessionUser user = CurrentUser.require(session);
+        return ApiResponse.ok(calibrationService.voidRecord(
+                id, request, user, http.getRemoteAddr()));
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<CalibrationDtos.RecordView> get(@PathVariable Long id, HttpSession session) {
         SessionUser user = CurrentUser.require(session);

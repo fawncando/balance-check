@@ -11,6 +11,14 @@ test('待复核与已复核状态直接映射', () => {
   assert.deepEqual(reviewStateOf('REVIEWED', 'APPROVED'), { text: '已复核', type: 'success', locked: true })
 })
 
+test('作废记录永久锁定', () => {
+  assert.deepEqual(reviewStateOf('VOIDED', null), {
+    text: '已作废',
+    type: 'danger',
+    locked: true
+  })
+})
+
 test('草稿按复核结论区分已退回与已解锁', () => {
   assert.equal(reviewStateOf('DRAFT', null).text, '草稿')
   assert.equal(reviewStateOf('DRAFT', 'REJECTED').text, '已退回')

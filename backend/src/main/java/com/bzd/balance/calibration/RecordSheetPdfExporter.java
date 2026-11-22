@@ -175,6 +175,13 @@ public class RecordSheetPdfExporter {
             drawLabelValue(graphics, margin, y, "复核意见", safe(record.getReviewComment()));
             y += 44;
             drawLabelValue(graphics, margin, y, "备注", safe(record.getRemark()));
+            if ("VOIDED".equals(record.getStatus())) {
+                y += 44;
+                drawLabelValue(graphics, margin, y, "作废人员", reviewerVoid(record));
+                drawLabelValue(graphics, WIDTH / 2, y, "作废时间", format(record.getVoidedAt()));
+                y += 44;
+                drawLabelValue(graphics, margin, y, "作废原因", safe(record.getVoidReason()));
+            }
             y += 94;
 
             graphics.setFont(body);
@@ -305,6 +312,7 @@ public class RecordSheetPdfExporter {
             case "DRAFT" -> "草稿";
             case "SUBMITTED" -> "待复核";
             case "REVIEWED" -> "已复核";
+            case "VOIDED" -> "已作废";
             default -> safe(value);
         };
     }
@@ -318,6 +326,10 @@ public class RecordSheetPdfExporter {
 
     private String reviewer(CalibrationDtos.RecordView record) {
         return record.getReviewerName() == null ? "-" : record.getReviewerName();
+    }
+
+    private String reviewerVoid(CalibrationDtos.RecordView record) {
+        return record.getVoidedByName() == null ? "-" : record.getVoidedByName();
     }
 
     public record PdfExport(String filename, byte[] content) {

@@ -104,6 +104,7 @@ python -m venv .venv
 - 记录查询支持按天平、状态、记录编号关键字与日期段过滤；检验人员只能查询与查看自己创建的记录
 - 复核人员与管理员可直接下载服务端生成的 A4 PDF；保留 HTML 打印页作为兼容入口
 - 记录详情展示复核结论、复核意见与九次称量偏差曲线（相对标称值的百分比，允许带 ±0.05%）
+- 管理员可填写原因作废记录；作废后保留九次数据和审计日志，并永久禁止修改、提交、复核和解锁
 
 ### 6.6 完善优化（批次 7）
 
@@ -154,6 +155,7 @@ python -m venv .venv
 | POST | /api/calibrations/{id}/submit | 提交复核 |
 | POST | /api/calibrations/{id}/review | 复核通过或退回（复核人员） |
 | POST | /api/calibrations/{id}/reopen | 解锁已复核记录（复核人员） |
+| POST | /api/calibrations/{id}/void | 填写原因作废记录（管理员） |
 | GET | /api/calibrations | 记录查询（balanceId、status、recordNo、dateFrom、dateTo） |
 | GET | /api/calibrations/{id} | 记录详情 |
 | GET | /api/calibrations/export?id= | 记录表打印页（HTML，复核人员） |
@@ -174,7 +176,8 @@ pwsh -File scripts\test-all.ps1            # 一键：后端编译 + 独立校�
 pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、天平、上传（16 项）
 pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（13 项）
 pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、导出（34 项）
-pwsh -File scripts\batch6-unit-check.ps1   # 复核规则与记录表渲染（15 项，不依赖数据库）
+pwsh -File scripts\batch6-unit-check.ps1   # 复核规则、作废状态与记录表渲染（16 项）
+pwsh -File scripts\void-test.ps1           # 作废权限、原因、锁定、查询与审计（13 项）
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
 pwsh -File scripts\batch7-unit-check.ps1   # 天平清单与局域网地址（13 项，不依赖数据库）
 analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
@@ -182,7 +185,7 @@ analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
                                            # 三段样本视频识别回归（3 个用例）
 node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs
-                                          # 前端换算与复核状态（12 项，不依赖 npm 安装）
+                                          # 前端换算与复核/作废状态（13 项，不依赖 npm 安装）
 ```
 
 浏览器端可用 `scripts/browser-acceptance.ps1` 连接本机 Edge 调试端口，验证登录、上传、

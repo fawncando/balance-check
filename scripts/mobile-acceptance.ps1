@@ -213,7 +213,9 @@ fetch('/api/auth/me', {credentials: 'include'})
     if ($text -notmatch '记录 JC\d+' -or $text -notmatch '电脑端') {
         throw '移动端结果页缺少记录号或电脑端提示'
     }
-    Write-Host '移动端局域网验收通过：登录、选择天平、上传、后台识别与成功提示。'
+    Cdp 'Page.navigate' @{ url = "$AppUrl/workbench" } | Out-Null
+    WaitPage "location.pathname === '/mobile' && document.body.innerText.includes('上传到电脑')" 15
+    Write-Host '移动端局域网验收通过：工作台自动回移动页、上传、后台识别与成功提示。'
 } catch {
     try {
         Write-Host ("当前地址：" + (Eval "location.href"))

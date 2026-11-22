@@ -184,8 +184,8 @@ analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py
                                            # 小数点、g/mg、设备档案、人员 QR 与手机入口 QR（8 项）
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
                                            # 三段样本视频识别回归（3 个用例）
-node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs
-                                          # 前端换算与复核/作废状态（13 项，不依赖 npm 安装）
+node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs frontend/src/utils/device.test.mjs
+                                          # 前端换算、复核/作废状态与移动端路由（17 项）
 ```
 
 浏览器端可用 `scripts/browser-acceptance.ps1` 连接本机 Edge 调试端口，验证登录、上传、

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login } from '../stores/auth'
+import { isMobileClient, landingPath } from '../utils/device'
 
 const username = ref('liyi')
 const password = ref('123456')
@@ -18,7 +19,7 @@ async function submit() {
   loading.value = true
   try {
     await login(username.value.trim(), password.value)
-    router.replace(route.query.redirect || '/workbench')
+    router.replace(landingPath(route.query.redirect, isMobileClient()))
   } catch (err) {
     ElMessage.error(err.message)
   } finally {

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { auth, restore } from '../stores/auth'
+import { isMobileClient } from '../utils/device'
 
 const routes = [
   { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },
@@ -32,6 +33,9 @@ router.beforeEach(async (to) => {
   const user = auth.user || (await restore())
   if (!user) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  if (to.name === 'workbench' && isMobileClient()) {
+    return { name: 'mobileUpload', replace: true }
   }
   return true
 })

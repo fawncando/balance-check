@@ -91,7 +91,7 @@ if ($SkipFrontend) {
     Write-Host ""
     Write-Host '== 前端单元测试 ==' -ForegroundColor Cyan
     if (Get-Command node -ErrorAction SilentlyContinue) {
-        & node --test (Join-Path $repo 'frontend/src/utils/judgement.test.mjs') (Join-Path $repo 'frontend/src/utils/review.test.mjs')
+        & node --test (Join-Path $repo 'frontend/src/utils/judgement.test.mjs') (Join-Path $repo 'frontend/src/utils/review.test.mjs') (Join-Path $repo 'frontend/src/utils/device.test.mjs')
         $nodeCode = $LASTEXITCODE
         Add-Result '前端单元测试' ($nodeCode -eq 0) ("exit {0}" -f $nodeCode)
     } else {

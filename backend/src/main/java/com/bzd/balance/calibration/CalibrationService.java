@@ -81,6 +81,7 @@ public class CalibrationService {
         return get(record.getId(), user);
     }
 
+    @Transactional
     public CalibrationDtos.RecordView update(Long id,
                                              CalibrationDtos.SaveRequest request,
                                              SessionUser user,

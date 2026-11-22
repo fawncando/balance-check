@@ -9,6 +9,7 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
 import java.util.List;
@@ -49,7 +50,11 @@ public class VideoService {
         this.uploadRoot = storageService.getRoot();
     }
 
-    public VideoView upload(MultipartFile file, Long balanceId, SessionUser user, String ip) {
+    public VideoView upload(MultipartFile file,
+                            Long balanceId,
+                            LocalDateTime recordedAt,
+                            SessionUser user,
+                            String ip) {
         if (file == null || file.isEmpty()) {
             throw new BizException("请选择要上传的视频文件");
         }
@@ -97,6 +102,7 @@ public class VideoService {
         video.setContentType(file.getContentType());
         video.setUploaderId(user.getId());
         video.setBalanceId(balanceId);
+        video.setRecordedAt(recordedAt);
         video.setStatus("UPLOADED");
         video.setMessage(null);
         videoMapper.insert(video);

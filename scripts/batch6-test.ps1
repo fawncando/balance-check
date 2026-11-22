@@ -25,7 +25,8 @@ function Measurement($range, $weight, $seq, $nominal, $value, $unit = 'g') {
 
 function RecordBody($balanceId, $time, $measurements) {
     return @{ balanceId = $balanceId; calibrationTime = $time; cleanOk = $true; levelOk = $true
-              internalCalibrationResult = '是'; remark = '批次6复核测试'; measurements = $measurements } |
+              internalCalibrationResult = '是'; remark = '批次6复核测试'; manualEntryReason = '批次6自动化测试';
+              measurements = $measurements } |
         ConvertTo-Json -Depth 5
 }
 

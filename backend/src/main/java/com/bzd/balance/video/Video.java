@@ -14,6 +14,7 @@ public class Video {
     private String contentType;
     private Long uploaderId;
     private Long balanceId;
+    private LocalDateTime recordedAt;
     private LocalDateTime uploadedAt;
     private String status;
     private String message;
@@ -93,6 +94,14 @@ public class Video {
 
     public void setBalanceId(Long balanceId) {
         this.balanceId = balanceId;
+    }
+
+    public LocalDateTime getRecordedAt() {
+        return recordedAt;
+    }
+
+    public void setRecordedAt(LocalDateTime recordedAt) {
+        this.recordedAt = recordedAt;
     }
 
     public LocalDateTime getUploadedAt() {

@@ -57,6 +57,7 @@ public final class CalibrationDtos {
         private Boolean levelOk;
         private String internalCalibrationResult;
         private String remark;
+        private String manualEntryReason;
         private List<MeasurementInput> measurements;
 
         public Long getBalanceId() { return balanceId; }
@@ -73,6 +74,8 @@ public final class CalibrationDtos {
         public void setInternalCalibrationResult(String value) { this.internalCalibrationResult = value; }
         public String getRemark() { return remark; }
         public void setRemark(String remark) { this.remark = remark; }
+        public String getManualEntryReason() { return manualEntryReason; }
+        public void setManualEntryReason(String manualEntryReason) { this.manualEntryReason = manualEntryReason; }
         public List<MeasurementInput> getMeasurements() { return measurements; }
         public void setMeasurements(List<MeasurementInput> measurements) { this.measurements = measurements; }
     }

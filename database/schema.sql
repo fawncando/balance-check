@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS video (
     content_type  VARCHAR(100) NULL,
     uploader_id   BIGINT       NOT NULL,
     balance_id    BIGINT       NULL COMMENT '上传时选择的天平',
+    recorded_at   DATETIME     NULL COMMENT '视频实际拍摄开始时间',
     uploaded_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status        VARCHAR(20)  NOT NULL DEFAULT 'UPLOADED'
                   COMMENT 'UPLOADED/ANALYZING/ANALYZED/FAILED',

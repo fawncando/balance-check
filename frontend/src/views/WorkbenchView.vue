@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
@@ -10,6 +10,7 @@ const router = useRouter()
 const balances = ref([])
 const videos = ref([])
 const balanceId = ref(null)
+const recordedAt = ref(new Date())
 const selectedFile = ref(null)
 const uploading = ref(false)
 const analyzingId = ref(null)
@@ -17,6 +18,7 @@ const progress = ref(0)
 const loading = ref(false)
 const mobileEntry = ref(null)
 const mobileQrVersion = ref(Date.now())
+let refreshTimer = null
 
 const statusMap = {
   UPLOADED: { text: '已上传', type: 'info' },
@@ -34,6 +36,11 @@ const balanceOptions = computed(() =>
 
 onMounted(async () => {
   await Promise.all([loadBalances(), loadVideos(), loadMobileEntry()])
+  refreshTimer = window.setInterval(() => loadVideos(true), 3000)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) window.clearInterval(refreshTimer)
 })
 
 async function loadMobileEntry() {
@@ -65,14 +72,14 @@ async function loadBalances() {
   }
 }
 
-async function loadVideos() {
-  loading.value = true
+async function loadVideos(silent = false) {
+  if (!silent) loading.value = true
   try {
     videos.value = await http.get('/videos')
   } catch (err) {
-    ElMessage.error(err.message)
+    if (!silent) ElMessage.error(err.message)
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -89,6 +96,9 @@ function onFileChange(uploadFile) {
     return
   }
   selectedFile.value = raw
+  if (Number(raw.lastModified) > 0) {
+    recordedAt.value = new Date(raw.lastModified)
+  }
 }
 
 async function startUpload() {
@@ -103,6 +113,7 @@ async function startUpload() {
   const form = new FormData()
   form.append('file', selectedFile.value)
   form.append('balanceId', balanceId.value)
+  form.append('recordedAt', localDateTime(new Date(recordedAt.value)))
 
   uploading.value = true
   progress.value = 0
@@ -181,6 +192,14 @@ function formatSize(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
+
+function pad(value) {
+  return String(value).padStart(2, '0')
+}
+
+function localDateTime(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`
+}
 </script>
 
 <template>
@@ -210,6 +229,15 @@ function formatSize(bytes) {
           <el-option v-for="item in balanceOptions" :key="item.id" :label="item.label" :value="item.id" />
         </el-select>
         <span class="note">天平信息来自天平清单，识别阶段会据此带出量程、分度值与砝码组。</span>
+        <span class="label">拍摄开始时间</span>
+        <el-date-picker
+          v-model="recordedAt"
+          type="datetime"
+          format="YYYY-MM-DD HH:mm"
+          :clearable="false"
+          placeholder="视频实际拍摄时间"
+          style="width: 190px"
+        />
       </div>
 
       <el-upload

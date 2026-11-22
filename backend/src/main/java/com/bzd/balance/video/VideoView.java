@@ -13,6 +13,7 @@ public class VideoView {
     private String balanceCode;
     private Long calibrationId;
     private String uploaderName;
+    private LocalDateTime recordedAt;
     private LocalDateTime uploadedAt;
     private String status;
     private String message;
@@ -84,6 +85,14 @@ public class VideoView {
 
     public void setUploaderName(String uploaderName) {
         this.uploaderName = uploaderName;
+    }
+
+    public LocalDateTime getRecordedAt() {
+        return recordedAt;
+    }
+
+    public void setRecordedAt(LocalDateTime recordedAt) {
+        this.recordedAt = recordedAt;
     }
 
     public LocalDateTime getUploadedAt() {

@@ -16,9 +16,9 @@ public interface VideoMapper {
 
     @Insert("""
             INSERT INTO video (original_name, stored_name, relative_path, size_bytes, sha256, content_type,
-                               uploader_id, balance_id, status, message)
+                               uploader_id, balance_id, recorded_at, status, message)
             VALUES (#{originalName}, #{storedName}, #{relativePath}, #{sizeBytes}, #{sha256}, #{contentType},
-                    #{uploaderId}, #{balanceId}, #{status}, #{message})
+                    #{uploaderId}, #{balanceId}, #{recordedAt}, #{status}, #{message})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Video video);
@@ -26,7 +26,7 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id,
-                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message,
+                   u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames
             FROM video v
@@ -40,7 +40,7 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id,
-                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message,
+                   u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames
             FROM video v
@@ -58,7 +58,7 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id,
-                   u.display_name AS uploader_name, v.uploaded_at, v.status, v.message,
+                   u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames
             FROM video v
@@ -84,6 +84,14 @@ public interface VideoMapper {
     int updateStatus(@Param("id") Long id,
                      @Param("status") String status,
                      @Param("message") String message);
+
+    @Update("""
+            UPDATE video
+            SET status = 'FAILED',
+                message = '服务重启导致识别任务中断，请重新识别'
+            WHERE status = 'ANALYZING'
+            """)
+    int failInterruptedAnalyses();
 
     @Update("""
             UPDATE video

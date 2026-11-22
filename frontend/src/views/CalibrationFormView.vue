@@ -15,7 +15,8 @@ const form = reactive({
   cleanOk: true,
   levelOk: true,
   internalCalibrationResult: '是',
-  remark: '无'
+  remark: '无',
+  manualEntryReason: ''
 })
 const rows = ref([])
 const recordId = ref(null)
@@ -165,6 +166,7 @@ function payload() {
     levelOk: form.levelOk,
     internalCalibrationResult: form.internalCalibrationResult,
     remark: form.remark || '无',
+    manualEntryReason: recordId.value ? undefined : form.manualEntryReason.trim(),
     measurements: rows.value.map((row) => ({
       rangeSeq: row.rangeSeq,
       weightSeq: row.weightSeq,
@@ -185,6 +187,10 @@ async function save(submitAfter = false) {
   }
   if (rows.value.length === 0 || filled.value < rows.value.length) {
     ElMessage.warning(`请填写全部 ${rows.value.length} 次示值`)
+    return
+  }
+  if (!recordId.value && form.manualEntryReason.trim().length < 2) {
+    ElMessage.warning('手工补录必须填写原因')
     return
   }
   saving.value = true
@@ -278,6 +284,17 @@ async function save(submitAfter = false) {
               <el-radio value="NA">NA</el-radio>
             </el-radio-group>
           </div>
+        </div>
+        <div v-if="!recordId" class="field full">
+          <label>手工补录原因（必填）</label>
+          <el-input
+            v-model="form.manualEntryReason"
+            type="textarea"
+            :rows="2"
+            maxlength="500"
+            show-word-limit
+            placeholder="例如：视频损坏，经负责人批准按纸质原始记录补录"
+          />
         </div>
       </div>
     </div>

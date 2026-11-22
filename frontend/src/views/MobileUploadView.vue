@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CameraFilled, SwitchButton } from '@element-plus/icons-vue'
 import http from '../api/http'
@@ -7,6 +7,7 @@ import { auth, logout } from '../stores/auth'
 
 const balances = ref([])
 const balanceId = ref(null)
+const recordedAt = ref(new Date())
 const selectedFile = ref(null)
 const uploading = ref(false)
 const progress = ref(0)
@@ -14,6 +15,7 @@ const stage = ref('idle')
 const statusText = ref('等待选择视频')
 const result = ref(null)
 const recent = ref([])
+let refreshTimer = null
 
 const currentBalance = computed(() => balances.value.find((item) => item.id === balanceId.value))
 const canUpload = computed(() => !!selectedFile.value && !!balanceId.value && !uploading.value)
@@ -23,9 +25,14 @@ onMounted(async () => {
     balances.value = await http.get('/balances')
     balanceId.value = balances.value[0]?.id || null
     await loadRecent()
+    refreshTimer = window.setInterval(loadRecent, 5000)
   } catch (err) {
     ElMessage.error(err.message)
   }
+})
+
+onUnmounted(() => {
+  if (refreshTimer) window.clearInterval(refreshTimer)
 })
 
 function chooseFile(event) {
@@ -41,6 +48,7 @@ function chooseFile(event) {
     return
   }
   selectedFile.value = file
+  if (Number(file.lastModified) > 0) recordedAt.value = new Date(file.lastModified)
   result.value = null
   stage.value = 'idle'
   statusText.value = '视频已选择，可以上传到电脑'
@@ -60,6 +68,7 @@ async function startUpload() {
     const form = new FormData()
     form.append('file', selectedFile.value)
     form.append('balanceId', balanceId.value)
+    form.append('recordedAt', localDateTime(new Date(recordedAt.value)))
     const uploaded = await http.post('/videos', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (event) => {
@@ -114,6 +123,14 @@ async function loadRecent() {
 function formatSize(bytes) {
   if (!bytes) return '-'
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+function pad(value) {
+  return String(value).padStart(2, '0')
+}
+
+function localDateTime(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`
 }
 
 function statusLabel(status) {
@@ -172,6 +189,15 @@ async function onLogout() {
           <small v-if="currentBalance">
             {{ currentBalance.rangeCount }} 个量程 · {{ currentBalance.department }}
           </small>
+          <span>拍摄开始时间</span>
+          <el-date-picker
+            v-model="recordedAt"
+            type="datetime"
+            format="YYYY-MM-DD HH:mm"
+            :clearable="false"
+            placeholder="视频实际拍摄时间"
+            style="width: 100%"
+          />
         </label>
 
         <label class="file-picker">

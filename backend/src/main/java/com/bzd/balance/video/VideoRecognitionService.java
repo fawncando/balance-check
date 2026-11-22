@@ -106,7 +106,14 @@ public class VideoRecognitionService {
             throw new BizException("视频状态已变化，请刷新后重试");
         }
 
-        recognitionExecutor.execute(() -> runAnalysis(videoId, user, ip));
+        try {
+            recognitionExecutor.execute(() -> runAnalysis(videoId, user, ip));
+        } catch (RuntimeException ex) {
+            String message = "识别任务繁忙，请稍后重新识别";
+            videoMapper.updateStatus(videoId, "FAILED", message);
+            auditService.log(user.getId(), "VIDEO_ANALYZE_FAILED", "VIDEO",
+                    String.valueOf(videoId), message, ip);
+        }
         return videoMapper.findViewById(videoId);
     }
 
@@ -189,9 +196,11 @@ public class VideoRecognitionService {
                                                    SessionUser user,
                                                    String ip) {
         BalanceView balance = balanceService.get(video.getBalanceId());
-        LocalDateTime calibrationTime = video.getUploadedAt() == null
+        LocalDateTime sourceTime = video.getRecordedAt() != null
+                ? video.getRecordedAt() : video.getUploadedAt();
+        LocalDateTime calibrationTime = sourceTime == null
                 ? LocalDateTime.now().withSecond(0).withNano(0)
-                : video.getUploadedAt().withSecond(0).withNano(0);
+                : sourceTime.withSecond(0).withNano(0);
 
         CalibrationDtos.SaveRequest request = new CalibrationDtos.SaveRequest();
         request.setBalanceId(video.getBalanceId());

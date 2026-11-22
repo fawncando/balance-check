@@ -127,6 +127,10 @@ python -m venv .venv
 - 上传成功后前端自动调用 `POST /api/videos/{id}/analyze`，状态按 `UPLOADED → ANALYZING → ANALYZED/FAILED` 推进
 - 识别任务进入后台线程池，接口约 100 ms 返回 `ANALYZING`，前端每秒轮询视频状态
 - 检验工作台显示手机上传入口二维码；手机打开 `/mobile` 专用页面，选择或拍摄视频后直接传到电脑
+- 上传时记录视频实际拍摄开始时间，测量时间按“拍摄时间 + 视频秒数”计算
+- 工作台和手机最近上传列表自动轮询，不再需要手工刷新
+- 后端重启时将遗留的 `ANALYZING` 任务标记为失败，可重新识别
+- 手工补录必须填写原因，备注和审计日志保留补录说明
 - F001 使用 Mettler 图形屏模板；F002 自动比较 `f002a` 与 `f002b` 两套显示档案，选择九次有效读数更多的结果
 - 设备与候选档案通过 `app.recognition.device-profiles` 配置，新增设备只需增加模板、`profiles.json` 和映射
 - 使用 OpenCV QRCodeDetector 识别视频中人员卡；卡号与上传账号 `card_no` 一致才标记通过，出现不一致时识别失败且不建单
@@ -177,9 +181,9 @@ python -m venv .venv
 
 ```powershell
 pwsh -File scripts\test-all.ps1            # 一键：后端编译 + 独立校验 + 前端测试（后端在线时含接口冒烟）
-pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、天平、上传（16 项）
-pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（13 项）
-pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、导出（34 项）
+pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、天平、拍摄时间与上传（17 项）
+pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（14 项）
+pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、导出（36 项）
 pwsh -File scripts\batch6-unit-check.ps1   # 复核规则、作废状态与记录表渲染（16 项）
 pwsh -File scripts\void-test.ps1           # 作废权限、原因、锁定、查询与审计（13 项）
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
@@ -204,6 +208,7 @@ pwsh -File scripts\check-environment.ps1                    # 环境检查（JDK
 pwsh -File scripts\init-database.ps1                        # 建库与初始化数据
 pwsh -File scripts\start-backend.ps1                       # 启动后端并等待健康检查
 pwsh -File scripts\stop-backend.ps1                        # 停止后端
+pwsh -File scripts\backup.ps1 -Password 123456 -IncludeUploads  # 备份数据库与视频
 pwsh -File scripts\package-release.ps1                      # 生成 dist/balance-check-<版本> 与 zip
 pwsh -File scripts\verify-release.ps1 -Path dist\balance-check-0.1.0-SNAPSHOT
 pwsh -File scripts\stress-test.ps1 -BaseUrl http://localhost:8081 -VideoDir D:\videos

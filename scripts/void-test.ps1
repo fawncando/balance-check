@@ -40,6 +40,7 @@ $body = @{
     levelOk = $true
     internalCalibrationResult = '是'
     remark = '作废接口测试'
+    manualEntryReason = '作废功能自动化测试'
     measurements = $measurements
 } | ConvertTo-Json -Depth 6
 

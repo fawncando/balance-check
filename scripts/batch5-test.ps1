@@ -40,7 +40,7 @@ try {
     Check '检验人员登录' ($web.Cookies.Count -gt 0)
 
     $body = @{ balanceId = 1; calibrationTime = '2026-10-17T09:12:00'; cleanOk = $true; levelOk = $true
-               internalCalibrationResult = '是'; remark = '无'; measurements = $single } | ConvertTo-Json -Depth 5
+               internalCalibrationResult = '是'; remark = '无'; manualEntryReason = '自动化测试补录'; measurements = $single } | ConvertTo-Json -Depth 5
     $r = Invoke-WebRequest "$base/api/calibrations" -Method Post -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
     $rec = ($r.Content | ConvertFrom-Json).data
     Check '创建合格记录' ($r.StatusCode -eq 200 -and $rec.externalResult -eq '是') "status=$($r.StatusCode)"
@@ -52,7 +52,7 @@ try {
     $badMeasurements = $single.Clone()
     $badMeasurements[4] = Measurement 1 2 2 50 50.5000
     $body = @{ balanceId = 1; calibrationTime = '2026-10-17T10:02:00'; cleanOk = $true; levelOk = $true
-               internalCalibrationResult = '是'; remark = '演示超差'; measurements = $badMeasurements } | ConvertTo-Json -Depth 5
+               internalCalibrationResult = '是'; remark = '演示超差'; manualEntryReason = '自动化测试补录'; measurements = $badMeasurements } | ConvertTo-Json -Depth 5
     $r = Invoke-WebRequest "$base/api/calibrations" -Method Post -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
     $bad = ($r.Content | ConvertFrom-Json).data
     $badRow = $bad.measurements | Where-Object { $_.weightSeq -eq 2 -and $_.measureSeq -eq 2 }
@@ -76,7 +76,7 @@ try {
 
     $reviewer = Login 'qiyi' '123456'
     $body = @{ balanceId = 1; calibrationTime = '2026-10-17T11:00:00'; cleanOk = $true; levelOk = $true
-               internalCalibrationResult = '是'; remark = '无'; measurements = $single } | ConvertTo-Json -Depth 5
+               internalCalibrationResult = '是'; remark = '无'; manualEntryReason = '自动化测试补录'; measurements = $single } | ConvertTo-Json -Depth 5
     $r = Invoke-WebRequest "$base/api/calibrations" -Method Post -WebSession $reviewer -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
     Check '复核人员不能创建记录' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"
 
@@ -84,8 +84,13 @@ try {
     $r = Invoke-WebRequest "$base/api/calibrations" -Method Post -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
     Check '空测量数据被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
+    $body = @{ balanceId = 1; calibrationTime = '2026-10-17T11:20:00'; cleanOk = $true; levelOk = $true
+               internalCalibrationResult = '是'; remark = '缺少补录原因'; measurements = $single } | ConvertTo-Json -Depth 5
+    $r = Invoke-WebRequest "$base/api/calibrations" -Method Post -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
+    Check '手工补录缺少原因被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
+
     $body = @{ balanceId = 2; calibrationTime = '2026-10-17T12:00:00'; cleanOk = $true; levelOk = $true
-               internalCalibrationResult = '是'; remark = '双量程'; measurements = $dual } | ConvertTo-Json -Depth 5
+               internalCalibrationResult = '是'; remark = '双量程'; manualEntryReason = '自动化测试补录'; measurements = $dual } | ConvertTo-Json -Depth 5
     $r = Invoke-WebRequest "$base/api/calibrations" -Method Post -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
     $dualRec = ($r.Content | ConvertFrom-Json).data
     Check '双量程记录创建成功' ($r.StatusCode -eq 200 -and $dualRec.measurements.Count -eq 9 -and $dualRec.externalResult -eq '是') `

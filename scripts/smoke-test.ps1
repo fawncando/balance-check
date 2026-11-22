@@ -73,12 +73,15 @@ try {
     Check '不存在的天平拒绝上传' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
     $r = Invoke-WebRequest "$base/api/videos" -Method Post -WebSession $web -SkipHttpErrorCheck `
-        -Form @{ file = $file; balanceId = '1' }
+        -Form @{ file = $file; balanceId = '1'; recordedAt = '2026-10-17T09:12:00' }
     $b = Body $r
     $videoId = $b.data.id
     Check '上传视频成功并返回已上传状态' ($r.StatusCode -eq 200 -and $b.data.status -eq 'UPLOADED') `
         "status=$($r.StatusCode) id=$videoId"
     Check '上传后回传天平编号 F001' ($b.data.balanceCode -eq 'F001') "balance=$($b.data.balanceCode)"
+    $recordedAt = [datetime]$b.data.recordedAt
+    $recordedOk = $recordedAt.ToString('yyyy-MM-dd HH:mm') -eq '2026-10-17 09:12'
+    Check '上传后回传实际拍摄时间' $recordedOk "recordedAt=$recordedAt"
 
     $r = Invoke-WebRequest "$base/api/videos" -WebSession $web -SkipHttpErrorCheck
     $b = Body $r

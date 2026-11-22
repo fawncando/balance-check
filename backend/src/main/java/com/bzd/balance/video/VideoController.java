@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDateTime;
 
 import com.bzd.balance.auth.CurrentUser;
 import com.bzd.balance.auth.SessionUser;
@@ -31,10 +34,14 @@ public class VideoController {
     @PostMapping
     public ApiResponse<VideoView> upload(@RequestParam("file") MultipartFile file,
                                          @RequestParam(value = "balanceId", required = false) Long balanceId,
+                                         @RequestParam(value = "recordedAt", required = false)
+                                         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                         LocalDateTime recordedAt,
                                          HttpSession session,
                                          HttpServletRequest request) {
         SessionUser user = CurrentUser.require(session);
-        return ApiResponse.ok(videoService.upload(file, balanceId, user, request.getRemoteAddr()));
+        return ApiResponse.ok(videoService.upload(
+                file, balanceId, recordedAt, user, request.getRemoteAddr()));
     }
 
     @GetMapping

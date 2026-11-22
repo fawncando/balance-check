@@ -19,6 +19,8 @@ import com.bzd.balance.balance.BalanceMapper;
 import com.bzd.balance.balance.BalanceRange;
 import com.bzd.balance.common.BizException;
 import com.bzd.balance.log.AuditService;
+import com.bzd.balance.video.Video;
+import com.bzd.balance.video.VideoMapper;
 
 @Service
 public class CalibrationService {
@@ -27,15 +29,18 @@ public class CalibrationService {
     private final BalanceMapper balanceMapper;
     private final JudgementService judgementService;
     private final AuditService auditService;
+    private final VideoMapper videoMapper;
 
     public CalibrationService(CalibrationMapper calibrationMapper,
                               BalanceMapper balanceMapper,
                               JudgementService judgementService,
-                              AuditService auditService) {
+                              AuditService auditService,
+                              VideoMapper videoMapper) {
         this.calibrationMapper = calibrationMapper;
         this.balanceMapper = balanceMapper;
         this.judgementService = judgementService;
         this.auditService = auditService;
+        this.videoMapper = videoMapper;
     }
 
     @Transactional
@@ -57,6 +62,26 @@ public class CalibrationService {
                 && calibrationMapper.findByVideoId(request.getVideoId()) != null) {
             throw new BizException("该视频已经生成校验记录");
         }
+        String manualReason = trimToNull(request.getManualEntryReason());
+        if (request.getVideoId() == null) {
+            if (manualReason == null || manualReason.length() < 2) {
+                throw new BizException("手工补录记录必须填写原因");
+            }
+            if (manualReason.length() > 500) {
+                throw new BizException("手工补录原因不能超过 500 个字符");
+            }
+        } else {
+            Video video = videoMapper.findById(request.getVideoId());
+            if (video == null) {
+                throw new BizException("关联视频不存在");
+            }
+            if (!request.getBalanceId().equals(video.getBalanceId())) {
+                throw new BizException("视频与天平不匹配");
+            }
+            if (!user.isAdmin() && !user.getId().equals(video.getUploaderId())) {
+                throw new BizException(403, "只能使用自己上传的视频");
+            }
+        }
 
         Calibration record = new Calibration();
         record.setRecordNo(nextRecordNo());
@@ -69,15 +94,24 @@ public class CalibrationService {
         record.setCleanOk(request.getCleanOk());
         record.setLevelOk(request.getLevelOk());
         record.setInternalCalibrationResult(request.getInternalCalibrationResult());
-        record.setRemark(blankToDefault(request.getRemark()));
+        String remark = blankToDefault(request.getRemark());
+        record.setRemark(request.getVideoId() == null
+                ? limitText("【手工补录：" + manualReason + "】" + ("无".equals(remark) ? "" : remark), 500)
+                : limitText(remark, 500));
         record.setStatus("DRAFT");
 
         List<CalibrationMeasurement> measurements =
                 buildMeasurements(record, request.getMeasurements());
         calibrationMapper.insert(record);
         persistMeasurements(record.getId(), measurements);
-        auditService.log(user.getId(), "CALIBRATION_CREATE", "CALIBRATION",
-                String.valueOf(record.getId()), record.getRecordNo(), ip);
+        auditService.log(user.getId(),
+                request.getVideoId() == null
+                        ? "CALIBRATION_CREATE_MANUAL" : "CALIBRATION_CREATE",
+                "CALIBRATION", String.valueOf(record.getId()),
+                request.getVideoId() == null
+                        ? record.getRecordNo() + "：" + manualReason
+                        : record.getRecordNo(),
+                ip);
         return get(record.getId(), user);
     }
 
@@ -279,5 +313,9 @@ public class CalibrationService {
             return null;
         }
         return value.trim();
+    }
+
+    private String limitText(String value, int maxLength) {
+        return value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 }

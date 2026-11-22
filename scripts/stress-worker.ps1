@@ -79,6 +79,7 @@ $body = @{
     levelOk = $true
     internalCalibrationResult = '是'
     remark = "并发压力测试 #$Index"
+    manualEntryReason = '并发压力测试补录'
     measurements = $measurements
 } | ConvertTo-Json -Depth 8
 $record = ((Invoke-WebRequest "$base/api/calibrations" -Method Post `

@@ -25,6 +25,8 @@ import com.bzd.balance.calibration.CalibrationService;
 import com.bzd.balance.common.BizException;
 import com.bzd.balance.log.AuditService;
 import com.bzd.balance.system.StorageService;
+import com.bzd.balance.user.User;
+import com.bzd.balance.user.UserMapper;
 
 @Service
 public class VideoRecognitionService {
@@ -40,6 +42,7 @@ public class VideoRecognitionService {
     private final AuditService auditService;
     private final RecognitionProperties recognitionProperties;
     private final TaskExecutor recognitionExecutor;
+    private final UserMapper userMapper;
     private final Path uploadRoot;
 
     public VideoRecognitionService(VideoMapper videoMapper,
@@ -51,6 +54,7 @@ public class VideoRecognitionService {
                                    AuditService auditService,
                                    RecognitionProperties recognitionProperties,
                                    @Qualifier("recognitionExecutor") TaskExecutor recognitionExecutor,
+                                   UserMapper userMapper,
                                    StorageService storageService) {
         this.videoMapper = videoMapper;
         this.balanceMapper = balanceMapper;
@@ -61,6 +65,7 @@ public class VideoRecognitionService {
         this.auditService = auditService;
         this.recognitionProperties = recognitionProperties;
         this.recognitionExecutor = recognitionExecutor;
+        this.userMapper = userMapper;
         this.uploadRoot = storageService.getRoot();
     }
 
@@ -117,11 +122,13 @@ public class VideoRecognitionService {
             }
 
             String card = best.getPersonCard();
-            boolean identityVerified = card != null && user.getCardNo() != null
-                    && card.equalsIgnoreCase(user.getCardNo());
+            User account = userMapper.findById(user.getId());
+            String expectedCard = account == null ? null : account.getCardNo();
+            boolean identityVerified = card != null && expectedCard != null
+                    && card.equalsIgnoreCase(expectedCard);
             if (card != null && !identityVerified) {
                 throw new BizException("人员卡号 " + card + " 与当前登录账号 "
-                        + user.getCardNo() + " 不一致");
+                        + expectedCard + " 不一致");
             }
 
             CalibrationDtos.RecordView record = createDraft(

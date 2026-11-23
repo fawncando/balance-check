@@ -25,7 +25,10 @@ onMounted(async () => {
     balances.value = await http.get('/balances')
     balanceId.value = balances.value[0]?.id || null
     await loadRecent()
-    refreshTimer = window.setInterval(loadRecent, 5000)
+    refreshTimer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') loadRecent()
+    }, 5000)
+    document.addEventListener('visibilitychange', onVisibilityChange)
   } catch (err) {
     ElMessage.error(err.message)
   }
@@ -33,7 +36,12 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (refreshTimer) window.clearInterval(refreshTimer)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
+
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') loadRecent()
+}
 
 function chooseFile(event) {
   const file = event.target.files?.[0]

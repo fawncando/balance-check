@@ -3,6 +3,7 @@ package com.bzd.balance.user;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import com.bzd.balance.auth.SessionUser;
@@ -42,7 +43,12 @@ public class UserCardService {
             throw new BizException("该人员卡号已绑定其他账号");
         }
         String previous = target.getCardNo();
-        userMapper.updateCardNo(id, cardNo);
+        try {
+            userMapper.updateCardNo(id, cardNo);
+        } catch (DuplicateKeyException ex) {
+            // 并发绑定同一卡号时由数据库唯一索引兜底，转成可读提示
+            throw new BizException("该人员卡号已绑定其他账号");
+        }
         auditService.log(actor.getId(), "USER_CARD_BIND", "USER", String.valueOf(id),
                 target.getDisplayName() + "：" + (previous == null ? "未绑定" : previous)
                         + " -> " + cardNo, ip);

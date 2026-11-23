@@ -3,7 +3,11 @@ package com.bzd.balance.system;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +18,15 @@ import com.bzd.balance.common.BizException;
 @Service
 public class QrCodeService {
 
+    private static final int CACHE_LIMIT = 128;
+    private static final Duration CACHE_TTL = Duration.ofMinutes(10);
+
     private final String configuredPython;
     private final String configuredScript;
+    private final Map<String, CachedQr> cache = new ConcurrentHashMap<>();
+
+    private record CachedQr(byte[] png, Instant createdAt) {
+    }
 
     public QrCodeService(
             @Value("${app.recognition.python-command:python}") String configuredPython,
@@ -25,7 +36,27 @@ public class QrCodeService {
         this.configuredScript = configuredScript;
     }
 
+    /**
+     * 生成二维码 PNG。同一文本在 10 分钟内直接复用结果，避免每次请求都启动 Python 进程。
+     */
     public byte[] png(String text) {
+        if (text == null || text.isBlank()) {
+            throw new BizException("二维码内容不能为空");
+        }
+        Instant now = Instant.now();
+        CachedQr cached = cache.get(text);
+        if (cached != null && cached.createdAt().plus(CACHE_TTL).isAfter(now)) {
+            return cached.png();
+        }
+        byte[] png = generate(text);
+        if (cache.size() >= CACHE_LIMIT) {
+            cache.clear();
+        }
+        cache.put(text, new CachedQr(png, now));
+        return png;
+    }
+
+    private byte[] generate(String text) {
         Path output = null;
         try {
             output = Files.createTempFile("balance-qr-", ".png");

@@ -1,4 +1,4 @@
-# 人员账号、角色权限、密码重置与账号启停测试。
+﻿# 人员账号、角色权限、密码重置与账号启停测试。
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'

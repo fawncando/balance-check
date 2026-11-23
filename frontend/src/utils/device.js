@@ -18,3 +18,7 @@ export function safeLocalPath(value) {
 export function landingPath(redirect, mobile) {
   return safeLocalPath(redirect) || (mobile ? '/mobile' : '/workbench')
 }
+
+export function canAccessRoles(role, allowedRoles) {
+  return !allowedRoles?.length || allowedRoles.includes(role)
+}

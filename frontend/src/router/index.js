@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { auth, restore } from '../stores/auth'
-import { isMobileClient } from '../utils/device'
+import { canAccessRoles, isMobileClient } from '../utils/device'
 
 const routes = [
   { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },
@@ -12,14 +12,34 @@ const routes = [
       { path: '', redirect: '/workbench' },
       { path: 'workbench', name: 'workbench', component: () => import('../views/WorkbenchView.vue') },
       { path: 'records', name: 'records', component: () => import('../views/CalibrationsView.vue') },
-      { path: 'calibrations/new', name: 'calibrationNew', component: () => import('../views/CalibrationFormView.vue') },
+      {
+        path: 'calibrations/new',
+        name: 'calibrationNew',
+        component: () => import('../views/CalibrationFormView.vue'),
+        meta: { roles: ['INSPECTOR', 'ADMIN'] }
+      },
       { path: 'calibrations/:id', name: 'calibrationDetail', component: () => import('../views/CalibrationDetailView.vue') },
       { path: 'calibrations/:id/edit', name: 'calibrationEdit', component: () => import('../views/CalibrationFormView.vue') },
       { path: 'reviews', name: 'reviews', component: () => import('../views/ReviewView.vue') },
       { path: 'balances', name: 'balances', component: () => import('../views/BalancesView.vue') },
-      { path: 'users', name: 'users', component: () => import('../views/UsersView.vue') },
-      { path: 'templates', name: 'templates', component: () => import('../views/TemplatesView.vue') },
-      { path: 'logs', name: 'logs', component: () => import('../views/LogsView.vue') }
+      {
+        path: 'users',
+        name: 'users',
+        component: () => import('../views/UsersView.vue'),
+        meta: { roles: ['ADMIN'] }
+      },
+      {
+        path: 'templates',
+        name: 'templates',
+        component: () => import('../views/TemplatesView.vue'),
+        meta: { roles: ['ADMIN'] }
+      },
+      {
+        path: 'logs',
+        name: 'logs',
+        component: () => import('../views/LogsView.vue'),
+        meta: { roles: ['ADMIN'] }
+      }
     ]
   }
 ]
@@ -37,6 +57,9 @@ router.beforeEach(async (to) => {
   }
   if (to.name === 'workbench' && isMobileClient()) {
     return { name: 'mobileUpload', replace: true }
+  }
+  if (!canAccessRoles(user.role, to.meta.roles)) {
+    return { name: 'workbench', replace: true }
   }
   return true
 })

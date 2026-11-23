@@ -1,8 +1,11 @@
 /** Detect phone/tablet browsers used for the dedicated upload entry. */
 export function isMobileClient() {
-  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false
-  return /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|MicroMessenger/i
-    .test(navigator.userAgent || '') || window.matchMedia('(max-width: 640px)').matches
+  if (typeof navigator === 'undefined') return false
+  return isMobileUserAgent(navigator.userAgent || '')
+}
+
+export function isMobileUserAgent(value) {
+  return /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|MicroMessenger/i.test(value || '')
 }
 
 /** Only allow local application paths as login redirect targets. */

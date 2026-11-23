@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { landingPath, safeLocalPath } from './device.js'
+import { isMobileUserAgent, landingPath, safeLocalPath } from './device.js'
 
 test('手机登录默认进入移动上传页', () => {
   assert.equal(landingPath(null, true), '/mobile')
@@ -19,4 +19,10 @@ test('拒绝外部跳转地址', () => {
   assert.equal(safeLocalPath('https://example.com'), null)
   assert.equal(safeLocalPath('//example.com'), null)
   assert.equal(landingPath('https://example.com', true), '/mobile')
+})
+
+test('窄窗口的桌面浏览器不按手机处理', () => {
+  assert.equal(isMobileUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/158.0'), false)
+  assert.equal(isMobileUserAgent('Mozilla/5.0 (Linux; Android 15; Mobile) Chrome/158.0'), true)
+  assert.equal(isMobileUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)'), true)
 })

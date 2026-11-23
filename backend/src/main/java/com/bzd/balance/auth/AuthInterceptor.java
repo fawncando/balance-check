@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import com.bzd.balance.user.User;
+import com.bzd.balance.user.UserMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,9 +16,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class AuthInterceptor implements HandlerInterceptor {
 
     private final ObjectMapper objectMapper;
+    private final UserMapper userMapper;
 
-    public AuthInterceptor(ObjectMapper objectMapper) {
+    public AuthInterceptor(ObjectMapper objectMapper, UserMapper userMapper) {
         this.objectMapper = objectMapper;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -25,11 +29,19 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (request.getMethod().equals("OPTIONS")) {
             return true;
         }
-        Object user = request.getSession(false) == null
+        Object value = request.getSession(false) == null
                 ? null
                 : request.getSession(false).getAttribute(CurrentUser.SESSION_KEY);
-        if (user != null) {
-            return true;
+        if (value instanceof SessionUser sessionUser) {
+            User current = userMapper.findById(sessionUser.getId());
+            if (current != null && "ACTIVE".equals(current.getStatus())) {
+                request.getSession(false).setAttribute(
+                        CurrentUser.SESSION_KEY,
+                        new SessionUser(current.getId(), current.getUsername(),
+                                current.getDisplayName(), current.getRole(), current.getCardNo()));
+                return true;
+            }
+            request.getSession(false).invalidate();
         }
         response.setStatus(401);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

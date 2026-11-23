@@ -120,6 +120,7 @@ if ($SkipApi) {
     Invoke-Child '批次 6 冒烟（复核、退回、解锁、查询、导出）' (Join-Path $repo 'scripts\batch6-test.ps1') @('-BaseUrl', $base)
     Invoke-Child '批次 7 冒烟（清单维护、操作日志、模板）' (Join-Path $repo 'scripts\batch7-test.ps1') @('-BaseUrl', $base)
     Invoke-Child '人员卡（权限、唯一性、二维码、解绑与审计）' (Join-Path $repo 'scripts\user-card-test.ps1') @('-BaseUrl', $base)
+    Invoke-Child '人员账号（新增、角色、密码与启停）' (Join-Path $repo 'scripts\user-management-test.ps1') @('-BaseUrl', $base)
     Invoke-Child '作废记录（管理员、锁定、查询与审计）' (Join-Path $repo 'scripts\void-test.ps1') @('-BaseUrl', $base)
 }
 

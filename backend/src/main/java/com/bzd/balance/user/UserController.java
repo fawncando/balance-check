@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,9 +25,12 @@ import jakarta.servlet.http.HttpSession;
 public class UserController {
 
     private final UserCardService userCardService;
+    private final UserAdminService userAdminService;
 
-    public UserController(UserCardService userCardService) {
+    public UserController(UserCardService userCardService,
+                          UserAdminService userAdminService) {
         this.userCardService = userCardService;
+        this.userAdminService = userAdminService;
     }
 
     /** 用户列表：操作日志按操作人筛选时使用，只对管理员开放。 */
@@ -34,6 +38,35 @@ public class UserController {
     public ApiResponse<List<UserView>> list(HttpSession session) {
         SessionUser user = CurrentUser.require(session);
         return ApiResponse.ok(userCardService.list(user));
+    }
+
+    @PostMapping
+    public ApiResponse<UserView> create(@RequestBody UserCreateRequest request,
+                                        HttpSession session,
+                                        HttpServletRequest http) {
+        SessionUser user = CurrentUser.require(session);
+        return ApiResponse.ok(userAdminService.create(
+                request, user, http.getRemoteAddr()));
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<UserView> update(@PathVariable Long id,
+                                        @RequestBody UserUpdateRequest request,
+                                        HttpSession session,
+                                        HttpServletRequest http) {
+        SessionUser user = CurrentUser.require(session);
+        return ApiResponse.ok(userAdminService.update(
+                id, request, user, http.getRemoteAddr()));
+    }
+
+    @PutMapping("/{id}/password")
+    public ApiResponse<Void> resetPassword(@PathVariable Long id,
+                                           @RequestBody PasswordResetRequest request,
+                                           HttpSession session,
+                                           HttpServletRequest http) {
+        SessionUser user = CurrentUser.require(session);
+        userAdminService.resetPassword(id, request, user, http.getRemoteAddr());
+        return ApiResponse.ok();
     }
 
     @PutMapping("/{id}/card")

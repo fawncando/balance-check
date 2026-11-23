@@ -24,7 +24,7 @@ const groups = [
     title: '基础数据',
     items: [
       { index: '/balances', title: '天平清单', icon: Files },
-      { index: '/users', title: '人员与卡号', icon: UserFilled, roles: ['ADMIN'] },
+      { index: '/users', title: '人员与权限', icon: UserFilled, roles: ['ADMIN'] },
       { index: '/templates', title: '记录表模板', icon: Tickets, roles: ['ADMIN'] },
       { index: '/logs', title: '操作日志', icon: DataAnalysis, roles: ['ADMIN'] }
     ]

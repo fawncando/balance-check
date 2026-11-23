@@ -1,13 +1,37 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, Postcard, Printer } from '@element-plus/icons-vue'
+import { Download, Plus, Postcard, Printer } from '@element-plus/icons-vue'
 import http from '../api/http'
 import { auth } from '../stores/auth'
 
 const users = ref([])
 const loading = ref(false)
-const editing = reactive({ visible: false, row: null, cardNo: '', saving: false })
+const cardEditing = reactive({ visible: false, row: null, cardNo: '', saving: false })
+const createForm = reactive({
+  visible: false,
+  username: '',
+  displayName: '',
+  password: '',
+  confirmPassword: '',
+  role: 'INSPECTOR',
+  saving: false
+})
+const profileEditing = reactive({
+  visible: false,
+  row: null,
+  displayName: '',
+  role: 'INSPECTOR',
+  status: 'ACTIVE',
+  saving: false
+})
+const passwordEditing = reactive({
+  visible: false,
+  row: null,
+  password: '',
+  confirmPassword: '',
+  saving: false
+})
 const qr = reactive({ visible: false, row: null, version: Date.now() })
 
 const isAdmin = computed(() => auth.user?.role === 'ADMIN')
@@ -32,27 +56,137 @@ async function load() {
 }
 
 function openEdit(row) {
-  editing.row = row
-  editing.cardNo = row.cardNo || ''
-  editing.visible = true
+  cardEditing.row = row
+  cardEditing.cardNo = row.cardNo || ''
+  cardEditing.visible = true
 }
 
 async function saveCard() {
-  const value = editing.cardNo.trim().toUpperCase()
+  const value = cardEditing.cardNo.trim().toUpperCase()
   if (!/^[A-Z0-9_-]{2,20}$/.test(value)) {
     ElMessage.warning('卡号只能包含 2 至 20 位字母、数字、下划线或短横线')
     return
   }
-  editing.saving = true
+  cardEditing.saving = true
   try {
-    await http.put(`/users/${editing.row.id}/card`, { cardNo: value })
+    await http.put(`/users/${cardEditing.row.id}/card`, { cardNo: value })
     ElMessage.success('人员卡号已保存')
-    editing.visible = false
+    cardEditing.visible = false
     await load()
   } catch (err) {
     ElMessage.error(err.message)
   } finally {
-    editing.saving = false
+    cardEditing.saving = false
+  }
+}
+
+function openCreate() {
+  Object.assign(createForm, {
+    visible: true,
+    username: '',
+    displayName: '',
+    password: '',
+    confirmPassword: '',
+    role: 'INSPECTOR'
+  })
+}
+
+async function createUser() {
+  if (!/^[a-z0-9_.-]{3,30}$/i.test(createForm.username.trim())) {
+    ElMessage.warning('登录账号须为 3 至 30 位字母、数字、点、下划线或短横线')
+    return
+  }
+  if (!createForm.displayName.trim()) {
+    ElMessage.warning('请填写姓名')
+    return
+  }
+  if (createForm.password.length < 6) {
+    ElMessage.warning('密码至少 6 个字符')
+    return
+  }
+  if (createForm.password !== createForm.confirmPassword) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  createForm.saving = true
+  try {
+    await http.post('/users', {
+      username: createForm.username.trim(),
+      displayName: createForm.displayName.trim(),
+      password: createForm.password,
+      role: createForm.role
+    })
+    ElMessage.success('人员账号已创建')
+    createForm.visible = false
+    await load()
+  } catch (err) {
+    ElMessage.error(err.message)
+  } finally {
+    createForm.saving = false
+  }
+}
+
+function openProfile(row) {
+  Object.assign(profileEditing, {
+    visible: true,
+    row,
+    displayName: row.displayName,
+    role: row.role,
+    status: row.status
+  })
+}
+
+async function saveProfile() {
+  if (!profileEditing.displayName.trim()) {
+    ElMessage.warning('请填写姓名')
+    return
+  }
+  profileEditing.saving = true
+  try {
+    await http.put(`/users/${profileEditing.row.id}`, {
+      displayName: profileEditing.displayName.trim(),
+      role: profileEditing.role,
+      status: profileEditing.status
+    })
+    ElMessage.success('人员权限已保存')
+    profileEditing.visible = false
+    await load()
+  } catch (err) {
+    ElMessage.error(err.message)
+  } finally {
+    profileEditing.saving = false
+  }
+}
+
+function openPassword(row) {
+  Object.assign(passwordEditing, {
+    visible: true,
+    row,
+    password: '',
+    confirmPassword: ''
+  })
+}
+
+async function savePassword() {
+  if (passwordEditing.password.length < 6) {
+    ElMessage.warning('密码至少 6 个字符')
+    return
+  }
+  if (passwordEditing.password !== passwordEditing.confirmPassword) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  passwordEditing.saving = true
+  try {
+    await http.put(`/users/${passwordEditing.row.id}/password`, {
+      password: passwordEditing.password
+    })
+    ElMessage.success('密码已重置')
+    passwordEditing.visible = false
+  } catch (err) {
+    ElMessage.error(err.message)
+  } finally {
+    passwordEditing.saving = false
   }
 }
 
@@ -133,8 +267,11 @@ function printCard(row) {
 <template>
   <div v-loading="loading">
     <div class="head">
-      <h1 class="page-title">人员与卡号</h1>
-      <span class="note">管理员维护每人唯一二维码卡号</span>
+      <div>
+        <h1 class="page-title">人员与权限</h1>
+        <span class="note">管理员新增人员、分配角色、重置密码并维护唯一二维码卡号</span>
+      </div>
+      <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="openCreate">新增人员</el-button>
     </div>
 
     <div v-if="!isAdmin" class="card">
@@ -171,8 +308,10 @@ function printCard(row) {
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="280" align="center">
+          <el-table-column label="操作" width="430" align="center">
             <template #default="{ row }">
+              <el-button link type="primary" @click="openProfile(row)">权限设置</el-button>
+              <el-button link type="warning" @click="openPassword(row)">重置密码</el-button>
               <el-button link type="primary" @click="openEdit(row)">设置卡号</el-button>
               <el-button v-if="row.cardNo" link type="success" @click="showQr(row)">查看二维码</el-button>
               <el-button v-if="row.cardNo" link type="primary" @click="printCard(row)">打印</el-button>
@@ -183,11 +322,81 @@ function printCard(row) {
       </div>
     </template>
 
-    <el-dialog v-model="editing.visible" title="设置人员卡号" width="430px">
-      <div v-if="editing.row" class="edit-body">
-        <p>{{ editing.row.displayName }}（{{ editing.row.username }}）</p>
+    <el-dialog v-model="createForm.visible" title="新增人员" width="480px">
+      <div class="edit-body">
+        <label>登录账号</label>
+        <el-input v-model="createForm.username" maxlength="30" placeholder="例如 zhangsan" />
+        <label>姓名</label>
+        <el-input v-model="createForm.displayName" maxlength="50" placeholder="例如 张三" />
+        <label>初始密码</label>
+        <el-input v-model="createForm.password" type="password" show-password maxlength="72" />
+        <label>确认密码</label>
+        <el-input v-model="createForm.confirmPassword" type="password" show-password maxlength="72" />
+        <label>角色与功能</label>
+        <el-select v-model="createForm.role" style="width: 100%">
+          <el-option label="检验人员：上传视频、确认记录并提交复核" value="INSPECTOR" />
+          <el-option label="复核确认人员：复核、退回、解锁记录，维护天平" value="REVIEWER" />
+          <el-option label="管理员：全部业务与管理权限" value="ADMIN" />
+        </el-select>
+      </div>
+      <template #footer>
+        <el-button @click="createForm.visible = false">取消</el-button>
+        <el-button type="primary" :loading="createForm.saving" @click="createUser">创建账号</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="profileEditing.visible" title="人员权限设置" width="480px">
+      <div v-if="profileEditing.row" class="edit-body">
+        <p>{{ profileEditing.row.username }}</p>
+        <label>姓名</label>
+        <el-input v-model="profileEditing.displayName" maxlength="50" />
+        <label>角色与功能</label>
+        <el-select
+          v-model="profileEditing.role"
+          :disabled="profileEditing.row.id === auth.user?.id"
+          style="width: 100%"
+        >
+          <el-option label="检验人员" value="INSPECTOR" />
+          <el-option label="复核确认人员" value="REVIEWER" />
+          <el-option label="管理员" value="ADMIN" />
+        </el-select>
+        <label>账号状态</label>
+        <el-select
+          v-model="profileEditing.status"
+          :disabled="profileEditing.row.id === auth.user?.id"
+          style="width: 100%"
+        >
+          <el-option label="启用" value="ACTIVE" />
+          <el-option label="停用" value="INACTIVE" />
+        </el-select>
+        <div class="note">停用后该账号现有会话会立即失效，且不能再次登录。</div>
+      </div>
+      <template #footer>
+        <el-button @click="profileEditing.visible = false">取消</el-button>
+        <el-button type="primary" :loading="profileEditing.saving" @click="saveProfile">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="passwordEditing.visible" title="重置密码" width="430px">
+      <div v-if="passwordEditing.row" class="edit-body">
+        <p>{{ passwordEditing.row.displayName }}（{{ passwordEditing.row.username }}）</p>
+        <label>新密码</label>
+        <el-input v-model="passwordEditing.password" type="password" show-password maxlength="72" />
+        <label>确认新密码</label>
+        <el-input v-model="passwordEditing.confirmPassword" type="password" show-password maxlength="72" />
+        <div class="note">密码长度为 6 至 72 个字符，管理员无需知道原密码。</div>
+      </div>
+      <template #footer>
+        <el-button @click="passwordEditing.visible = false">取消</el-button>
+        <el-button type="primary" :loading="passwordEditing.saving" @click="savePassword">确认重置</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="cardEditing.visible" title="设置人员卡号" width="430px">
+      <div v-if="cardEditing.row" class="edit-body">
+        <p>{{ cardEditing.row.displayName }}（{{ cardEditing.row.username }}）</p>
         <el-input
-          v-model="editing.cardNo"
+          v-model="cardEditing.cardNo"
           maxlength="20"
           show-word-limit
           placeholder="例如 RY-001"
@@ -196,8 +405,8 @@ function printCard(row) {
         <div class="note">只能使用字母、数字、下划线或短横线，卡号必须全局唯一。</div>
       </div>
       <template #footer>
-        <el-button @click="editing.visible = false">取消</el-button>
-        <el-button type="primary" :loading="editing.saving" @click="saveCard">保存</el-button>
+        <el-button @click="cardEditing.visible = false">取消</el-button>
+        <el-button type="primary" :loading="cardEditing.saving" @click="saveCard">保存</el-button>
       </template>
     </el-dialog>
 
@@ -219,7 +428,8 @@ function printCard(row) {
 </template>
 
 <style scoped>
-.head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.head > div { display: flex; align-items: baseline; gap: 14px; }
 .intro { display: flex; align-items: center; gap: 14px; background: #f3f8ff; }
 .intro .el-icon { font-size: 34px; color: #1f5c9d; }
 .intro strong { font-size: 14px; }

@@ -27,6 +27,13 @@ const statusMap = {
   FAILED: { text: '识别失败', type: 'danger' }
 }
 
+const calibrationStatusMap = {
+  DRAFT: { text: '待确认', type: 'success' },
+  SUBMITTED: { text: '待复核', type: 'warning' },
+  REVIEWED: { text: '已复核', type: 'info' },
+  VOIDED: { text: '已作废', type: 'danger' }
+}
+
 const balanceOptions = computed(() =>
   balances.value.map((b) => ({
     id: b.id,
@@ -49,6 +56,18 @@ onUnmounted(() => {
 
 function onVisibilityChange() {
   if (document.visibilityState === 'visible') loadVideos(true)
+}
+
+function displayStatus(row) {
+  if (row.status === 'ANALYZED' && row.calibrationStatus) {
+    return calibrationStatusMap[row.calibrationStatus] || { text: row.calibrationStatus, type: 'info' }
+  }
+  return statusMap[row.status] || { text: row.status, type: 'info' }
+}
+
+function openCalibration(row) {
+  const suffix = row.calibrationStatus === 'DRAFT' ? '/edit' : ''
+  router.push(`/calibrations/${row.calibrationId}${suffix}`)
 }
 
 async function loadMobileEntry() {
@@ -286,8 +305,8 @@ function localDateTime(date) {
         <el-table-column prop="uploadedAt" label="上传时间" width="170" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="statusMap[row.status]?.type || 'info'" size="small">
-              {{ statusMap[row.status]?.text || row.status }}
+            <el-tag :type="displayStatus(row).type" size="small">
+              {{ displayStatus(row).text }}
             </el-tag>
           </template>
         </el-table-column>
@@ -312,8 +331,8 @@ function localDateTime(date) {
               v-else-if="row.status === 'ANALYZED' && row.calibrationId"
               link
               type="primary"
-              @click="router.push(`/calibrations/${row.calibrationId}/edit`)"
-            >确认结果</el-button>
+              @click="openCalibration(row)"
+            >{{ row.calibrationStatus === 'DRAFT' ? '确认结果' : '查看记录' }}</el-button>
             <el-button
               v-if="row.status === 'UPLOADED' && row.uploaderName === auth.user?.displayName"
               link

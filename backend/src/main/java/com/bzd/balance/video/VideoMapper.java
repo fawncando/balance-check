@@ -25,7 +25,7 @@ public interface VideoMapper {
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
-                   c.id AS calibration_id,
+                   c.id AS calibration_id, c.status AS calibration_status,
                    u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames
@@ -39,7 +39,7 @@ public interface VideoMapper {
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
-                   c.id AS calibration_id,
+                   c.id AS calibration_id, c.status AS calibration_status,
                    u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames
@@ -57,7 +57,7 @@ public interface VideoMapper {
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
-                   c.id AS calibration_id,
+                   c.id AS calibration_id, c.status AS calibration_status,
                    u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames

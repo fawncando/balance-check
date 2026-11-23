@@ -150,6 +150,18 @@ function statusLabel(status) {
   }[status] || status
 }
 
+function recentStatus(item) {
+  if (item.status === 'ANALYZED' && item.calibrationStatus) {
+    return {
+      DRAFT: '待确认',
+      SUBMITTED: '待复核',
+      REVIEWED: '已复核',
+      VOIDED: '已作废'
+    }[item.calibrationStatus] || item.calibrationStatus
+  }
+  return statusLabel(item.status)
+}
+
 async function onLogout() {
   try {
     await ElMessageBox.confirm('确定退出当前账号吗？', '退出登录', { type: 'warning' })
@@ -262,7 +274,7 @@ async function onLogout() {
             <strong>{{ item.originalName }}</strong>
             <small>{{ item.balanceCode }} · {{ formatSize(item.sizeBytes) }}</small>
           </div>
-          <span :class="['state', item.status?.toLowerCase()]">{{ statusLabel(item.status) }}</span>
+          <span :class="['state', item.status?.toLowerCase()]">{{ recentStatus(item) }}</span>
         </div>
       </section>
     </main>

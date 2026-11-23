@@ -14,6 +14,7 @@ python -m venv .venv
 环境变量 `FFMPEG` 指定路径。Windows 可在项目根目录执行
 `pwsh -File scripts\install-ffmpeg.ps1` 安装到 `D:\develop\ffmpeg\bin`。
 未安装 ffmpeg 时会自动使用 OpenCV 解码兜底，但处理长视频时 ffmpeg 通常更快。
+上传接口另使用同目录的 `ffprobe.exe` 验证文件确实包含视频流和有效时长。
 
 ## 二、运行
 

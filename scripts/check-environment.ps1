@@ -126,6 +126,21 @@ if ($ffmpegPath -and (Test-Path -LiteralPath $ffmpegPath)) {
     Report 'WARN' '找不到 ffmpeg' '先执行 scripts\install-ffmpeg.ps1，或设置 APP_RECOGNITION_FFMPEG'
 }
 
+$ffprobePath = $null
+if ($env:APP_RECOGNITION_FFPROBE) {
+    $ffprobePath = $env:APP_RECOGNITION_FFPROBE
+} elseif ($ffmpegPath) {
+    $ffprobePath = Join-Path (Split-Path $ffmpegPath -Parent) 'ffprobe.exe'
+} else {
+    $ffprobeCommand = Get-Command ffprobe -ErrorAction SilentlyContinue
+    if ($ffprobeCommand) { $ffprobePath = $ffprobeCommand.Source }
+}
+if ($ffprobePath -and (Test-Path -LiteralPath $ffprobePath)) {
+    Report 'PASS' 'ffprobe' ((& $ffprobePath -version 2>&1 | Select-Object -First 1))
+} else {
+    Report 'WARN' '找不到 ffprobe' '上传视频内容校验需要，先执行 scripts\install-ffmpeg.ps1'
+}
+
 # 端口占用
 foreach ($port in $Ports) {
     if (Test-PortInUse $port) {

@@ -35,6 +35,7 @@ app:
     python-command: ${APP_RECOGNITION_PYTHON:python}
     script-path: ${APP_RECOGNITION_SCRIPT:../analysis/analyze_video.py}
     ffmpeg-command: ${APP_RECOGNITION_FFMPEG:ffmpeg}
+    ffprobe-command: ${APP_RECOGNITION_FFPROBE:ffprobe}
     timeout-seconds: ${APP_RECOGNITION_TIMEOUT:600}
     qr-script: ${APP_RECOGNITION_QR_SCRIPT:../analysis/generate_qr.py}
     device-profiles:

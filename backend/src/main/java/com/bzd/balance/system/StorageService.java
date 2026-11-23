@@ -25,7 +25,6 @@ public class StorageService {
 
     public Map<String, Object> stats() {
         Map<String, Object> stats = new LinkedHashMap<>();
-        stats.put("path", root.toString().replace('\\', '/'));
         try {
             Files.createDirectories(root);
             FileStore store = Files.getFileStore(root);
@@ -37,7 +36,7 @@ public class StorageService {
             stats.put("writable", Files.isWritable(root));
         } catch (IOException ex) {
             stats.put("writable", false);
-            stats.put("error", ex.getMessage());
+            stats.put("error", "storage unavailable");
         }
         return stats;
     }

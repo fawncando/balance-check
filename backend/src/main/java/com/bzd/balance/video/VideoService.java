@@ -36,17 +36,20 @@ public class VideoService {
     private final BalanceMapper balanceMapper;
     private final AuditService auditService;
     private final VideoRecognitionService recognitionService;
+    private final VideoProbeService videoProbeService;
     private final Path uploadRoot;
 
     public VideoService(VideoMapper videoMapper,
                         BalanceMapper balanceMapper,
                         AuditService auditService,
                         VideoRecognitionService recognitionService,
+                        VideoProbeService videoProbeService,
                         StorageService storageService) {
         this.videoMapper = videoMapper;
         this.balanceMapper = balanceMapper;
         this.auditService = auditService;
         this.recognitionService = recognitionService;
+        this.videoProbeService = videoProbeService;
         this.uploadRoot = storageService.getRoot();
     }
 
@@ -94,18 +97,28 @@ public class VideoService {
         }
 
         Video video = new Video();
-        video.setOriginalName(originalName);
-        video.setStoredName(storedName);
-        video.setRelativePath(relativePath);
-        video.setSizeBytes(size);
-        video.setSha256(sha256);
-        video.setContentType(file.getContentType());
-        video.setUploaderId(user.getId());
-        video.setBalanceId(balanceId);
-        video.setRecordedAt(recordedAt);
-        video.setStatus("UPLOADED");
-        video.setMessage(null);
-        videoMapper.insert(video);
+        try {
+            videoProbeService.validate(target);
+            video.setOriginalName(originalName);
+            video.setStoredName(storedName);
+            video.setRelativePath(relativePath);
+            video.setSizeBytes(size);
+            video.setSha256(sha256);
+            video.setContentType(file.getContentType());
+            video.setUploaderId(user.getId());
+            video.setBalanceId(balanceId);
+            video.setRecordedAt(recordedAt);
+            video.setStatus("UPLOADED");
+            video.setMessage(null);
+            videoMapper.insert(video);
+        } catch (RuntimeException ex) {
+            try {
+                Files.deleteIfExists(target);
+            } catch (IOException ignored) {
+                // Best-effort cleanup for a rejected upload.
+            }
+            throw ex;
+        }
 
         auditService.log(user.getId(), "VIDEO_UPLOAD", "VIDEO", String.valueOf(video.getId()),
                 originalName + " (" + size + " bytes)", ip);

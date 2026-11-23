@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 $base = $BaseUrl.TrimEnd('/')
 $script:pass = 0
 $script:fail = 0
-$tempFile = $null
+$tempFiles = @()
 
 function Check([string]$name, [bool]$condition, [string]$detail = '') {
     if ($condition) {
@@ -31,6 +31,8 @@ try {
     $r = Invoke-WebRequest "$base/api/system/health" -SkipHttpErrorCheck
     $b = Body $r
     Check '健康检查返回 UP' ($r.StatusCode -eq 200 -and $b.data.status -eq 'UP') "status=$($r.StatusCode)"
+    $storageFields = @($b.data.storage.PSObject.Properties.Name)
+    Check '健康检查不暴露服务器路径' ($storageFields -notcontains 'path')
 
     $r = Invoke-WebRequest "$base/api/videos" -SkipHttpErrorCheck
     Check '未登录访问视频接口返回 401' ($r.StatusCode -eq 401) "status=$($r.StatusCode)"
@@ -63,14 +65,38 @@ try {
     if ($VideoPath -and (Test-Path $VideoPath)) {
         $file = Get-Item $VideoPath
     } else {
-        $tempFile = Join-Path ([System.IO.Path]::GetTempPath()) ("smoke-" + [guid]::NewGuid().ToString('N') + ".mp4")
-        [System.IO.File]::WriteAllBytes($tempFile, (New-Object byte[] 2048))
-        $file = Get-Item $tempFile
+        $ffmpeg = $env:APP_RECOGNITION_FFMPEG
+        if (-not $ffmpeg) { $ffmpeg = $env:FFMPEG }
+        if (-not $ffmpeg -and (Test-Path 'D:\develop\ffmpeg\bin\ffmpeg.exe')) {
+            $ffmpeg = 'D:\develop\ffmpeg\bin\ffmpeg.exe'
+        }
+        if (-not $ffmpeg) {
+            $command = Get-Command ffmpeg -ErrorAction SilentlyContinue
+            if ($command) { $ffmpeg = $command.Source }
+        }
+        if (-not $ffmpeg) {
+            throw '找不到 ffmpeg，无法生成冒烟测试视频'
+        }
+        $validTemp = Join-Path ([System.IO.Path]::GetTempPath()) ("smoke-" + [guid]::NewGuid().ToString('N') + ".mp4")
+        $tempFiles += $validTemp
+        & $ffmpeg -hide_banner -loglevel error -f lavfi `
+            -i 'color=c=black:s=320x240:r=10:d=1' -an -c:v mpeg4 -q:v 5 -y $validTemp
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $validTemp)) {
+            throw '生成冒烟测试视频失败'
+        }
+        $file = Get-Item $validTemp
     }
 
     $r = Invoke-WebRequest "$base/api/videos" -Method Post -WebSession $web -SkipHttpErrorCheck `
         -Form @{ file = $file; balanceId = '9999' }
     Check '不存在的天平拒绝上传' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
+
+    $fakeTemp = Join-Path ([System.IO.Path]::GetTempPath()) ("fake-" + [guid]::NewGuid().ToString('N') + ".mp4")
+    $tempFiles += $fakeTemp
+    [System.IO.File]::WriteAllText($fakeTemp, 'this is not a video')
+    $r = Invoke-WebRequest "$base/api/videos" -Method Post -WebSession $web -SkipHttpErrorCheck `
+        -Form @{ file = (Get-Item $fakeTemp); balanceId = '1' }
+    Check '伪装成 MP4 的非视频文件被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
     $r = Invoke-WebRequest "$base/api/videos" -Method Post -WebSession $web -SkipHttpErrorCheck `
         -Form @{ file = $file; balanceId = '1'; recordedAt = '2026-10-17T09:12:00' }
@@ -101,7 +127,7 @@ try {
     Check '退出后会话失效（401）' ($r.StatusCode -eq 401) "status=$($r.StatusCode)"
 
 } finally {
-    if ($tempFile) {
+    foreach ($tempFile in $tempFiles) {
         try {
             if ([System.IO.File]::Exists($tempFile)) {
                 [System.IO.File]::Delete($tempFile)

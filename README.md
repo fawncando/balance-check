@@ -25,6 +25,7 @@ balance-check/
 - Node.js 20 及以上（本机验证使用 Node 25）
 - Python 3.11 及以上（识别原型使用项目内 `.venv`）
 - ffmpeg（视频抽帧必需；Windows 推荐执行 `pwsh -File scripts\install-ffmpeg.ps1` 安装到 `D:\develop\ffmpeg`）
+- ffprobe（上传时验证真实视频流；与 ffmpeg 安装在同一目录）
 - 视频存储默认在 `D:/develop/balance-check-data/uploads`，可用 `APP_UPLOAD_DIR` 覆盖
 - 后端依赖来自本地 Maven 仓库，前端与识别依赖安装完成后可离线运行
 
@@ -34,7 +35,7 @@ balance-check/
 pwsh -File scripts\install-ffmpeg.ps1
 ```
 
-脚本会下载官方稳定构建、校验 SHA-256，并把 `ffmpeg.exe` 安装到
+脚本会下载官方稳定构建、校验 SHA-256，并把 `ffmpeg.exe`、`ffprobe.exe` 安装到
 `D:\develop\ffmpeg\bin`。`start-backend.ps1` 会自动使用该路径；也可用
 `APP_RECOGNITION_FFMPEG` 指定自定义位置。识别脚本另有 OpenCV 抽帧兜底。
 
@@ -45,7 +46,7 @@ cmd /c "mysql -uroot -p --default-character-set=utf8mb4 < database\schema.sql"
 cmd /c "mysql -uroot -p --default-character-set=utf8mb4 < database\seed.sql"
 ```
 
-数据库连接配置在 `backend/src/main/resources/application.yml`，默认 `root/123456`，库名 `balance_check`。`/api/system/health` 会返回存储路径、磁盘容量与可写状态，便于监控。
+数据库连接配置在 `backend/src/main/resources/application.yml`，默认 `root/123456`，库名 `balance_check`。`/api/system/health` 只返回磁盘容量与可写状态，不暴露服务器目录。
 
 ## 四、启动
 
@@ -192,7 +193,7 @@ python -m venv .venv
 
 ```powershell
 pwsh -File scripts\test-all.ps1            # 一键：后端编译 + 独立校验 + 前端测试（后端在线时含接口冒烟）
-pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、天平、拍摄时间与上传（17 项）
+pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、健康脱敏、真实视频与上传（19 项）
 pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（14 项）
 pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、导出（36 项）
 pwsh -File scripts\batch6-unit-check.ps1   # 复核规则、作废状态与记录表渲染（16 项）
@@ -206,7 +207,7 @@ analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
                                            # 三段样本视频识别回归（3 个用例）
 node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs frontend/src/utils/device.test.mjs
-                                          # 前端换算、复核/作废状态与移动端路由（17 项）
+                                          # 前端换算、复核/作废状态与移动端/角色路由（19 项）
 ```
 
 浏览器端可用 `scripts/browser-acceptance.ps1` 连接本机 Edge 调试端口，验证登录、上传、

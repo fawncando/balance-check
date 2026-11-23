@@ -76,6 +76,22 @@ if (-not $env:APP_RECOGNITION_FFMPEG) {
         }
     }
 }
+if (-not $env:APP_RECOGNITION_FFPROBE) {
+    $ffprobeCandidates = @()
+    if ($env:APP_RECOGNITION_FFMPEG) {
+        $ffprobeCandidates += Join-Path (Split-Path $env:APP_RECOGNITION_FFMPEG -Parent) 'ffprobe.exe'
+    }
+    $ffprobeCandidates += @(
+        'D:\develop\ffmpeg\bin\ffprobe.exe',
+        (Join-Path $root 'tools\ffmpeg\bin\ffprobe.exe')
+    )
+    $installedFfprobe = $ffprobeCandidates |
+        Where-Object { Test-Path -LiteralPath $_ } |
+        Select-Object -First 1
+    if ($installedFfprobe) {
+        $env:APP_RECOGNITION_FFPROBE = $installedFfprobe
+    }
+}
 
 $argLine = '-jar "' + $Jar + '" --server.port=' + $Port
 $url = "http://localhost:$Port"
@@ -92,6 +108,7 @@ if ($DryRun) {
     Write-Host ("识别 Python : {0}" -f ($(if ($env:APP_RECOGNITION_PYTHON) { $env:APP_RECOGNITION_PYTHON } else { '(application.yml 默认值)' })))
     Write-Host ("识别脚本    : {0}" -f ($(if ($env:APP_RECOGNITION_SCRIPT) { $env:APP_RECOGNITION_SCRIPT } else { '(application.yml 默认值)' })))
     Write-Host ("ffmpeg      : {0}" -f ($(if ($env:APP_RECOGNITION_FFMPEG) { $env:APP_RECOGNITION_FFMPEG } else { '(application.yml 默认值)' })))
+    Write-Host ("ffprobe     : {0}" -f ($(if ($env:APP_RECOGNITION_FFPROBE) { $env:APP_RECOGNITION_FFPROBE } else { '(application.yml 默认值)' })))
     Write-Host ("启动命令    : {0} {1}" -f $java, $argLine)
     Write-Host '（试运行，未启动进程）'
     exit 0

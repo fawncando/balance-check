@@ -23,23 +23,24 @@ public class MobileEntryService {
     }
 
     public Map<String, Object> entry() {
-        String url = resolvedPublicUrl();
+        String lan = lanAddress();
+        String url = resolvedPublicUrl(lan);
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("url", url);
         body.put("path", "/mobile");
-        body.put("lanIp", lanAddress());
+        body.put("lanIp", lan);
         return body;
     }
 
     public byte[] qrPng() {
-        return qrCodeService.png(resolvedPublicUrl());
+        return qrCodeService.png(resolvedPublicUrl(lanAddress()));
     }
 
-    private String resolvedPublicUrl() {
+    private String resolvedPublicUrl(String lan) {
         if (configuredPublicUrl != null && !configuredPublicUrl.isBlank()) {
             return configuredPublicUrl.replaceAll("/+$", "") + "/mobile";
         }
-        return "http://" + lanAddress() + ":" + mobilePort + "/mobile";
+        return "http://" + lan + ":" + mobilePort + "/mobile";
     }
 
     private String lanAddress() {

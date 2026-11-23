@@ -36,12 +36,20 @@ const balanceOptions = computed(() =>
 
 onMounted(async () => {
   await Promise.all([loadBalances(), loadVideos(), loadMobileEntry()])
-  refreshTimer = window.setInterval(() => loadVideos(true), 3000)
+  refreshTimer = window.setInterval(() => {
+    if (document.visibilityState === 'visible') loadVideos(true)
+  }, 3000)
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 onUnmounted(() => {
   if (refreshTimer) window.clearInterval(refreshTimer)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
+
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') loadVideos(true)
+}
 
 async function loadMobileEntry() {
   try {

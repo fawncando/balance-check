@@ -60,8 +60,21 @@ if (-not $env:APP_RECOGNITION_PYTHON) {
 if (-not $env:APP_RECOGNITION_SCRIPT) {
     $env:APP_RECOGNITION_SCRIPT = Join-Path $root 'analysis\analyze_video.py'
 }
-if (-not $env:APP_RECOGNITION_FFMPEG -and $env:FFMPEG) {
-    $env:APP_RECOGNITION_FFMPEG = $env:FFMPEG
+if (-not $env:APP_RECOGNITION_FFMPEG) {
+    if ($env:FFMPEG) {
+        $env:APP_RECOGNITION_FFMPEG = $env:FFMPEG
+    } else {
+        $ffmpegCandidates = @(
+            'D:\develop\ffmpeg\bin\ffmpeg.exe',
+            (Join-Path $root 'tools\ffmpeg\bin\ffmpeg.exe')
+        )
+        $installedFfmpeg = $ffmpegCandidates |
+            Where-Object { Test-Path -LiteralPath $_ } |
+            Select-Object -First 1
+        if ($installedFfmpeg) {
+            $env:APP_RECOGNITION_FFMPEG = $installedFfmpeg
+        }
+    }
 }
 
 $argLine = '-jar "' + $Jar + '" --server.port=' + $Port

@@ -54,6 +54,7 @@ Check '作废数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrat
 Check '作废记录测试脚本' (Test-Path (Join-Path $root 'scripts\void-test.ps1'))
 Check '人员卡测试脚本' (Test-Path (Join-Path $root 'scripts\user-card-test.ps1'))
 Check '数据库与视频备份脚本' (Test-Path (Join-Path $root 'scripts\backup.ps1'))
+Check 'ffmpeg 安装脚本' (Test-Path (Join-Path $root 'scripts\install-ffmpeg.ps1'))
 Check '视频识别入口 analyze_video.py' (Test-Path (Join-Path $root 'analysis\analyze_video.py'))
 Check '手机入口二维码脚本 generate_qr.py' (Test-Path (Join-Path $root 'analysis\generate_qr.py'))
 Check '视频识别依赖 requirements.txt' (Test-Path (Join-Path $root 'analysis\requirements.txt'))

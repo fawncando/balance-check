@@ -108,10 +108,23 @@ $mysql = Get-Command mysql -ErrorAction SilentlyContinue
 if ($mysql) { Report 'PASS' 'MySQL 客户端' ((& mysql --version) | Out-String).Trim() }
 else { Report 'WARN' '找不到 mysql 客户端' '初始化数据库时需要，可用图形工具代替' }
 
-# ffmpeg（识别原型使用）
-$ffmpeg = if ($env:FFMPEG) { Get-Command $env:FFMPEG -ErrorAction SilentlyContinue } else { Get-Command ffmpeg -ErrorAction SilentlyContinue }
-if ($ffmpeg) { Report 'PASS' 'ffmpeg' $ffmpeg.Source }
-else { Report 'WARN' '找不到 ffmpeg' '批次 4 识别抽帧需要，可用环境变量 FFMPEG 指定' }
+# ffmpeg（优先环境变量，其次 PATH 与默认安装目录）
+$ffmpegPath = $null
+if ($env:APP_RECOGNITION_FFMPEG) {
+    $ffmpegPath = $env:APP_RECOGNITION_FFMPEG
+} elseif ($env:FFMPEG) {
+    $ffmpegPath = $env:FFMPEG
+} elseif (Test-Path -LiteralPath 'D:\develop\ffmpeg\bin\ffmpeg.exe') {
+    $ffmpegPath = 'D:\develop\ffmpeg\bin\ffmpeg.exe'
+} else {
+    $ffmpegCommand = Get-Command ffmpeg -ErrorAction SilentlyContinue
+    if ($ffmpegCommand) { $ffmpegPath = $ffmpegCommand.Source }
+}
+if ($ffmpegPath -and (Test-Path -LiteralPath $ffmpegPath)) {
+    Report 'PASS' 'ffmpeg' ((& $ffmpegPath -version 2>&1 | Select-Object -First 1))
+} else {
+    Report 'WARN' '找不到 ffmpeg' '先执行 scripts\install-ffmpeg.ps1，或设置 APP_RECOGNITION_FFMPEG'
+}
 
 # 端口占用
 foreach ($port in $Ports) {

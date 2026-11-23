@@ -10,6 +10,7 @@ a calibrated .npz template, one profile entry, and a backend device mapping.
 import argparse
 import glob
 import json
+import math
 import os
 import subprocess
 import sys
@@ -46,23 +47,78 @@ def extract_frames(video, target, ffmpeg):
     """Extract full frames so the same pass can decode displays and QR cards."""
     os.makedirs(target, exist_ok=True)
     pattern = os.path.join(target, "f%05d.jpg")
-    subprocess.run(
-        [
-            ffmpeg,
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-i",
-            video,
-            "-vf",
-            "fps=1",
-            "-q:v",
-            "2",
-            pattern,
-            "-y",
-        ],
-        check=True,
-    )
+    ffmpeg_error = None
+    try:
+        subprocess.run(
+            [
+                ffmpeg,
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-i",
+                video,
+                "-vf",
+                "fps=1",
+                "-q:v",
+                "2",
+                pattern,
+                "-y",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except (FileNotFoundError, OSError, subprocess.CalledProcessError) as exc:
+        ffmpeg_error = exc
+
+    frames = sorted(glob.glob(os.path.join(target, "f*.jpg")))
+    if frames and ffmpeg_error is None:
+        return frames
+
+    # OpenCV is already required for display/QR recognition. Its bundled video
+    # backend provides a safe fallback when ffmpeg is not installed.
+    frames = extract_frames_opencv(video, target)
+    if frames:
+        return frames
+    detail = str(ffmpeg_error) if ffmpeg_error else "未生成任何帧"
+    raise RuntimeError(f"视频抽帧失败：{detail}")
+
+
+def extract_frames_opencv(video, target):
+    """Extract approximately one frame per second using OpenCV."""
+    pattern = os.path.join(target, "f%05d.jpg")
+    for existing in glob.glob(os.path.join(target, "f*.jpg")):
+        os.remove(existing)
+
+    capture = cv2.VideoCapture(video)
+    if not capture.isOpened():
+        return []
+
+    try:
+        fps = capture.get(cv2.CAP_PROP_FPS)
+        if not math.isfinite(fps) or fps <= 0:
+            fps = 1.0
+        frame_index = 0
+        next_second = 0.0
+        while True:
+            ok, frame = capture.read()
+            if not ok:
+                break
+            timestamp = frame_index / fps
+            if timestamp + (0.5 / fps) >= next_second:
+                path = pattern % (next_second + 1)
+                if not cv2.imwrite(
+                    path,
+                    frame,
+                    [cv2.IMWRITE_JPEG_QUALITY, 95],
+                ):
+                    raise RuntimeError(f"OpenCV 无法写入抽帧文件：{path}")
+                next_second += 1.0
+            frame_index += 1
+    finally:
+        capture.release()
     return sorted(glob.glob(os.path.join(target, "f*.jpg")))
 
 

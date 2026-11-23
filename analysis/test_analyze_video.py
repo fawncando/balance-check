@@ -11,7 +11,13 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from analyze_video import PROFILES, detect_person_card, nominal_of, sartorius_value  # noqa: E402
+from analyze_video import (  # noqa: E402
+    PROFILES,
+    detect_person_card,
+    extract_frames,
+    nominal_of,
+    sartorius_value,
+)
 from generate_qr import generate as generate_qr  # noqa: E402
 
 
@@ -59,6 +65,27 @@ class SartoriusValueTest(unittest.TestCase):
             generate_qr(value, path, 300)
             decoded, _, _ = cv2.QRCodeDetector().detectAndDecode(cv2.imread(path))
             self.assertEqual(decoded, value)
+
+    def test_extract_frames_falls_back_to_opencv(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            video = os.path.join(tmp, "sample.avi")
+            writer = cv2.VideoWriter(
+                video,
+                cv2.VideoWriter_fourcc(*"MJPG"),
+                10.0,
+                (64, 48),
+            )
+            self.assertTrue(writer.isOpened())
+            for _ in range(30):
+                writer.write(np.zeros((48, 64, 3), dtype=np.uint8))
+            writer.release()
+
+            frames = extract_frames(
+                video,
+                os.path.join(tmp, "frames"),
+                os.path.join(tmp, "missing-ffmpeg"),
+            )
+            self.assertEqual(len(frames), 3)
 
 
 if __name__ == "__main__":

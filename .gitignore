@@ -9,6 +9,8 @@ uploads/
 logs/
 *.log
 *.pid
+testing/manual-uploads/
+testing/*-result.json
 
 # 工具与缓存
 .idea/

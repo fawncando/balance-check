@@ -10,8 +10,10 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-另需 ffmpeg，可通过 `--ffmpeg`、`APP_RECOGNITION_FFMPEG` 或环境变量
-`FFMPEG` 指定路径。
+正式部署建议安装 ffmpeg，可通过 `--ffmpeg`、`APP_RECOGNITION_FFMPEG` 或
+环境变量 `FFMPEG` 指定路径。Windows 可在项目根目录执行
+`pwsh -File scripts\install-ffmpeg.ps1` 安装到 `D:\develop\ffmpeg\bin`。
+未安装 ffmpeg 时会自动使用 OpenCV 解码兜底，但处理长视频时 ffmpeg 通常更快。
 
 ## 二、运行
 

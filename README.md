@@ -24,9 +24,19 @@ balance-check/
 - MySQL 8.0
 - Node.js 20 及以上（本机验证使用 Node 25）
 - Python 3.11 及以上（识别原型使用项目内 `.venv`）
-- ffmpeg（识别抽帧用，可用环境变量 `FFMPEG` 指定）
+- ffmpeg（视频抽帧必需；Windows 推荐执行 `pwsh -File scripts\install-ffmpeg.ps1` 安装到 `D:\develop\ffmpeg`）
 - 视频存储默认在 `D:/develop/balance-check-data/uploads`，可用 `APP_UPLOAD_DIR` 覆盖
 - 后端依赖来自本地 Maven 仓库，前端与识别依赖安装完成后可离线运行
+
+当前机器缺少 ffmpeg 时，可执行：
+
+```powershell
+pwsh -File scripts\install-ffmpeg.ps1
+```
+
+脚本会下载官方稳定构建、校验 SHA-256，并把 `ffmpeg.exe` 安装到
+`D:\develop\ffmpeg\bin`。`start-backend.ps1` 会自动使用该路径；也可用
+`APP_RECOGNITION_FFMPEG` 指定自定义位置。识别脚本另有 OpenCV 抽帧兜底。
 
 ## 三、初始化数据库
 

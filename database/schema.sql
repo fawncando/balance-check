@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
     id            BIGINT       NOT NULL AUTO_INCREMENT,
     username      VARCHAR(50)  NOT NULL COMMENT '登录账号',
     password_hash VARCHAR(100) NOT NULL COMMENT 'BCrypt 散列',
+    session_version INT NOT NULL DEFAULT 0 COMMENT '会话版本，重置密码时递增',
     display_name  VARCHAR(50)  NOT NULL COMMENT '姓名',
     role          VARCHAR(20)  NOT NULL COMMENT 'ADMIN/INSPECTOR/REVIEWER',
     card_no       VARCHAR(20)  NULL COMMENT '人员二维码卡号，用于与视频识别结果比对',

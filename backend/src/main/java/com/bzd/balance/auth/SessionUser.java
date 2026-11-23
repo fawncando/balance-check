@@ -7,16 +7,23 @@ public class SessionUser {
     private String displayName;
     private String role;
     private String cardNo;
+    private Integer sessionVersion;
 
     public SessionUser() {
     }
 
     public SessionUser(Long id, String username, String displayName, String role, String cardNo) {
+        this(id, username, displayName, role, cardNo, 0);
+    }
+
+    public SessionUser(Long id, String username, String displayName, String role,
+                       String cardNo, Integer sessionVersion) {
         this.id = id;
         this.username = username;
         this.displayName = displayName;
         this.role = role;
         this.cardNo = cardNo;
+        this.sessionVersion = sessionVersion;
     }
 
     public boolean isAdmin() {
@@ -69,5 +76,13 @@ public class SessionUser {
 
     public void setCardNo(String cardNo) {
         this.cardNo = cardNo;
+    }
+
+    public Integer getSessionVersion() {
+        return sessionVersion;
+    }
+
+    public void setSessionVersion(Integer sessionVersion) {
+        this.sessionVersion = sessionVersion;
     }
 }

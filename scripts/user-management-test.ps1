@@ -108,6 +108,9 @@ $r = Invoke-WebRequest "$base/api/users/$($created.id)/password" -Method Put -We
     -SkipHttpErrorCheck
 Check '管理员重置密码' ($r.StatusCode -eq 200) "status=$($r.StatusCode)"
 
+$r = Invoke-WebRequest "$base/api/auth/me" -WebSession $newSession -SkipHttpErrorCheck
+Check '重置密码后旧会话立即失效' ($r.StatusCode -eq 401) "status=$($r.StatusCode)"
+
 $oldLogin = Login $username $initialPassword
 Check '旧密码重置后失效' ($oldLogin.Response.StatusCode -eq 401) `
     "status=$($oldLogin.Response.StatusCode)"
@@ -148,6 +151,19 @@ $logs = @((($r.Content | ConvertFrom-Json).data.items))
 Check '新增人员写入审计日志' (@($logs | Where-Object {
     $_.action -eq 'USER_CREATE' -and $_.detail -like "$username*"
 }).Count -ge 1)
+
+$r = Invoke-WebRequest "$base/api/users" -Method Post -WebSession $admin `
+    -ContentType 'application/json' -Body '{invalid-json' -SkipHttpErrorCheck
+$badJson = $r.Content | ConvertFrom-Json
+Check '格式错误请求不泄露内部异常' ($r.StatusCode -eq 400 -and
+    $badJson.message -eq '请求数据格式不正确')
+
+$r = Invoke-WebRequest "$base/api/users/not-a-number" -Method Put -WebSession $admin `
+    -ContentType 'application/json' `
+    -Body (@{ displayName = '测试'; role = 'INSPECTOR'; status = 'ACTIVE' } | ConvertTo-Json) `
+    -SkipHttpErrorCheck
+Check '非法路径参数返回安全的 400' ($r.StatusCode -eq 400 -and
+    (($r.Content | ConvertFrom-Json).message -eq '请求参数格式不正确'))
 
 $r = Invoke-WebRequest "$base/api/users/$($created.id)" -Method Put -WebSession $admin `
     -ContentType 'application/json' `

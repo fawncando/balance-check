@@ -34,11 +34,17 @@ public class AuthInterceptor implements HandlerInterceptor {
                 : request.getSession(false).getAttribute(CurrentUser.SESSION_KEY);
         if (value instanceof SessionUser sessionUser) {
             User current = userMapper.findById(sessionUser.getId());
-            if (current != null && "ACTIVE".equals(current.getStatus())) {
+            int sessionVersion = sessionUser.getSessionVersion() == null
+                    ? 0 : sessionUser.getSessionVersion();
+            int currentVersion = current == null || current.getSessionVersion() == null
+                    ? 0 : current.getSessionVersion();
+            if (current != null && "ACTIVE".equals(current.getStatus())
+                    && sessionVersion == currentVersion) {
                 request.getSession(false).setAttribute(
                         CurrentUser.SESSION_KEY,
                         new SessionUser(current.getId(), current.getUsername(),
-                                current.getDisplayName(), current.getRole(), current.getCardNo()));
+                                current.getDisplayName(), current.getRole(), current.getCardNo(),
+                                current.getSessionVersion()));
                 return true;
             }
             request.getSession(false).invalidate();

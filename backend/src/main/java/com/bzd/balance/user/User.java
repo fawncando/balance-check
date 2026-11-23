@@ -7,6 +7,7 @@ public class User {
     private Long id;
     private String username;
     private String passwordHash;
+    private Integer sessionVersion;
     private String displayName;
     private String role;
     private String cardNo;
@@ -35,6 +36,14 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public Integer getSessionVersion() {
+        return sessionVersion;
+    }
+
+    public void setSessionVersion(Integer sessionVersion) {
+        this.sessionVersion = sessionVersion;
     }
 
     public String getDisplayName() {

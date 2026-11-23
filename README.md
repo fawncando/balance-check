@@ -200,7 +200,7 @@ pwsh -File scripts\void-test.ps1           # 作废权限、原因、锁定、�
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
 pwsh -File scripts\batch7-unit-check.ps1   # 天平清单与局域网地址（13 项，不依赖数据库）
 pwsh -File scripts\user-card-test.ps1      # 人员卡权限、唯一性、二维码、解绑与审计（12 项）
-pwsh -File scripts\user-management-test.ps1 # 人员新增、角色、密码、启停与审计（23 项）
+pwsh -File scripts\user-management-test.ps1 # 人员新增、角色、密码、会话失效与审计（26 项）
 analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
                                            # 小数点、g/mg、设备档案、人员 QR 与手机入口 QR（8 项）
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe

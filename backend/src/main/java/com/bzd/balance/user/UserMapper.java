@@ -13,21 +13,21 @@ import org.apache.ibatis.annotations.Update;
 public interface UserMapper {
 
     @Select("""
-            SELECT id, username, password_hash, display_name, role, card_no, status, created_at
+            SELECT id, username, password_hash, session_version, display_name, role, card_no, status, created_at
             FROM sys_user
             WHERE username = #{username} AND status = 'ACTIVE'
             """)
     User findByUsername(String username);
 
     @Select("""
-            SELECT id, username, display_name, role, card_no, status, created_at
+            SELECT id, username, session_version, display_name, role, card_no, status, created_at
             FROM sys_user
             ORDER BY id
             """)
     List<User> findAll();
 
     @Select("""
-            SELECT id, username, display_name, role, card_no, status, created_at
+            SELECT id, username, session_version, display_name, role, card_no, status, created_at
             FROM sys_user WHERE id = #{id}
             """)
     User findById(Long id);
@@ -59,7 +59,12 @@ public interface UserMapper {
             """)
     int updateProfile(User user);
 
-    @Update("UPDATE sys_user SET password_hash = #{passwordHash} WHERE id = #{id}")
+    @Update("""
+            UPDATE sys_user
+            SET password_hash = #{passwordHash},
+                session_version = session_version + 1
+            WHERE id = #{id}
+            """)
     int updatePassword(@Param("id") Long id, @Param("passwordHash") String passwordHash);
 
     @Select("""

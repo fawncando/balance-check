@@ -51,6 +51,7 @@ Check '建表脚本 schema.sql' (Test-Path (Join-Path $root 'database\schema.sql
 Check '初始化数据 seed.sql' (Test-Path (Join-Path $root 'database\seed.sql'))
 Check '数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrations\001_recognition_enhancements.sql'))
 Check '作废数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrations\002_record_voiding.sql'))
+Check '会话版本数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrations\004_user_session_version.sql'))
 Check '作废记录测试脚本' (Test-Path (Join-Path $root 'scripts\void-test.ps1'))
 Check '人员卡测试脚本' (Test-Path (Join-Path $root 'scripts\user-card-test.ps1'))
 Check '人员账号管理测试脚本' (Test-Path (Join-Path $root 'scripts\user-management-test.ps1'))

@@ -384,7 +384,7 @@ function printCard(row) {
         <el-input v-model="passwordEditing.password" type="password" show-password maxlength="72" />
         <label>确认新密码</label>
         <el-input v-model="passwordEditing.confirmPassword" type="password" show-password maxlength="72" />
-        <div class="note">密码长度为 6 至 72 个字符，管理员无需知道原密码。</div>
+        <div class="note">密码长度为 6 至 72 个字符；重置后该账号所有现有会话立即失效。</div>
       </div>
       <template #footer>
         <el-button @click="passwordEditing.visible = false">取消</el-button>

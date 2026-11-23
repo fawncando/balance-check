@@ -26,7 +26,8 @@ public class AuthService {
             throw new BizException(401, "账号或密码错误");
         }
         SessionUser sessionUser = new SessionUser(
-                user.getId(), user.getUsername(), user.getDisplayName(), user.getRole(), user.getCardNo());
+                user.getId(), user.getUsername(), user.getDisplayName(), user.getRole(),
+                user.getCardNo(), user.getSessionVersion());
         auditService.log(user.getId(), "LOGIN", "USER", String.valueOf(user.getId()), "登录成功", ip);
         return sessionUser;
     }

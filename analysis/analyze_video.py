@@ -123,10 +123,16 @@ def extract_frames_opencv(video, target):
     return sorted(glob.glob(os.path.join(target, "f*.jpg")))
 
 
-def display_panel(frame):
+def display_panel(frame, roi=DISPLAY_ROI):
     frame = normalize_frame(frame)
-    x, y, w, h = DISPLAY_ROI
+    x, y, w, h = roi
     cropped = frame[y : y + h, x : x + w]
+    if cropped.size == 0:
+        return cropped
+    if (w, h) != DISPLAY_ROI[2:]:
+        cropped = cv2.resize(
+            cropped, DISPLAY_ROI[2:], interpolation=cv2.INTER_AREA
+        )
     px, py, pw, ph = sartorius.PANEL
     return cropped[py : py + ph, px : px + pw]
 
@@ -183,11 +189,17 @@ def classify_glyph(glyph, templates):
     return best, confidence
 
 
-def decode_frame(path, profile, templates):
+def decode_frame(path, profile, templates, roi=DISPLAY_ROI):
     frame = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     if frame is None:
         return None, 0.0
-    panel = display_panel(frame)
+    return decode_gray_frame(frame, profile, templates, roi)
+
+
+def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI):
+    panel = display_panel(frame, roi)
+    if panel is None or panel.size == 0:
+        return None, 0.0
     config = PROFILES[profile]
     if config["decoder"] == "mettler":
         text, confidence = mettler.read_panel(panel, templates)
@@ -209,6 +221,65 @@ def decode_frame(path, profile, templates):
     value = sartorius_value(profile, text, boxes[0]["x"])
     confidence = sum(confidences) / len(confidences) if confidences else 0.0
     return value, confidence
+
+
+def find_display_roi(frames, profile, templates):
+    """Locate a moved or zoomed display using nominal-value agreement."""
+    if not frames:
+        return None
+    base_x, base_y, base_w, base_h = DISPLAY_ROI
+    scales = (0.7, 0.85, 1.0, 1.15, 1.3)
+    x_shifts = range(-180, 181, 60)
+    y_shifts = range(-300, 301, 75)
+    candidates = []
+    for scale in scales:
+        width = max(120, int(base_w * scale))
+        height = max(54, int(base_h * scale))
+        for dx in x_shifts:
+            x = base_x + dx
+            if x < 0 or x + width > REFERENCE_SIZE[0]:
+                continue
+            for dy in y_shifts:
+                y = base_y + dy
+                if y < 0 or y + height > REFERENCE_SIZE[1]:
+                    continue
+                candidates.append((x, y, width, height))
+
+    sample_count = min(7, len(frames))
+    sample_indexes = sorted({
+        round((index + 1) * (len(frames) - 1) / (sample_count + 1))
+        for index in range(sample_count)
+    })
+    samples = []
+    for index in sample_indexes:
+        frame = cv2.imread(frames[index], cv2.IMREAD_GRAYSCALE)
+        if frame is not None:
+            samples.append(normalize_frame(frame))
+
+    nominals = PROFILES[profile]["nominals"]
+    scored = []
+    for roi in candidates:
+        score = 0.0
+        supported = 0
+        for frame in samples:
+            value, confidence = decode_gray_frame(
+                frame, profile, templates, roi
+            )
+            if value is None or confidence < 0.2:
+                continue
+            nearest = nominal_of(value, nominals)
+            relative_error = abs(value - nearest) / max(nearest, 1e-9)
+            if relative_error > 0.15:
+                continue
+            weight = max(0.0, 1.0 - relative_error / 0.15)
+            score += confidence * weight
+            supported += 1
+        if supported:
+            scored.append((supported, score, roi))
+    if not scored:
+        return None
+    scored.sort(reverse=True)
+    return scored[0][2]
 
 
 def detect_person_card(frames):
@@ -238,10 +309,10 @@ def nominal_of(value, nominals):
     return min(nominals, key=lambda nominal: abs(nominal - value))
 
 
-def decode_values(frames, profile, templates):
+def decode_values(frames, profile, templates, roi=DISPLAY_ROI):
     decoded = []
     for second, path in enumerate(frames, 1):
-        value, confidence = decode_frame(path, profile, templates)
+        value, confidence = decode_frame(path, profile, templates, roi)
         decoded.append((second, value, confidence))
     return decoded
 
@@ -333,9 +404,25 @@ def analyze(video, profile, ffmpeg, out_path=None, min_confidence=55.0):
     with tempfile.TemporaryDirectory(prefix="bc-rec-") as tmp:
         frames = extract_frames(video, tmp, ffmpeg)
         values = decode_values(frames, profile, templates)
+        weighings = collect_weighings(values, config["nominals"])
+        display_roi = DISPLAY_ROI
+        adaptive_roi_used = False
+        if len(weighings) < 9:
+            adaptive_roi = find_display_roi(frames, profile, templates)
+            if adaptive_roi:
+                adaptive_values = decode_values(
+                    frames, profile, templates, adaptive_roi
+                )
+                adaptive_weighings = collect_weighings(
+                    adaptive_values, config["nominals"]
+                )
+                if len(adaptive_weighings) > len(weighings):
+                    values = adaptive_values
+                    weighings = adaptive_weighings
+                    display_roi = adaptive_roi
+                    adaptive_roi_used = True
         person_card = detect_person_card(frames)
 
-    weighings = collect_weighings(values, config["nominals"])
     passed = len(weighings) == 9
     for weighing in weighings:
         low = weighing["nominalG"] * 0.9995
@@ -365,6 +452,8 @@ def analyze(video, profile, ffmpeg, out_path=None, min_confidence=55.0):
         "confidence": confidence,
         "anomalyFrames": anomaly_frames,
         "needsReview": needs_review,
+        "displayRoi": list(display_roi),
+        "adaptiveRoi": adaptive_roi_used,
         "weighings": weighings,
         "verdict": "PASS" if passed else "FAIL",
     }

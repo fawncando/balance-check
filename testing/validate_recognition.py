@@ -26,6 +26,7 @@ CASES = {
             10.0001,
             10.0001,
         ],
+        "units": ["g"] * 9,
     },
     "f002a": {
         "video": "Balance_1_first.mp4",
@@ -40,6 +41,7 @@ CASES = {
             2.0001,
             2.0001,
         ],
+        "units": ["g"] * 9,
     },
     "f002b": {
         "video": "Balance_1_second.mp4",
@@ -54,6 +56,7 @@ CASES = {
             2.00006,
             2.00008,
         ],
+        "units": ["g", "g", "g", "mg", "mg", "mg", "mg", "mg", "mg"],
     },
 }
 
@@ -82,6 +85,7 @@ def main():
 
         result = analyze(str(video), profile, args.ffmpeg)
         actual = [item["valueG"] for item in result["weighings"]]
+        actual_units = [item.get("displayUnit") for item in result["weighings"]]
         expected = case["values"]
         if result["verdict"] != "PASS":
             failures.append(f"{profile}: verdict {result['verdict']}")
@@ -96,6 +100,11 @@ def main():
         ):
             failures.append(
                 f"{profile}: values mismatch\nexpected={expected}\nactual={actual}"
+            )
+            continue
+        if actual_units != case["units"]:
+            failures.append(
+                f"{profile}: units mismatch\nexpected={case['units']}\nactual={actual_units}"
             )
             continue
         print(f"{profile}: PASS ({len(actual)} readings)")

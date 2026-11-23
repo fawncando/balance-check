@@ -74,6 +74,7 @@ public class RecognitionResult {
         private Integer measureSeq;
         private BigDecimal nominalG;
         private BigDecimal valueG;
+        private String displayUnit;
         private Integer startSec;
         private Integer endSec;
         private BigDecimal confidence;
@@ -108,6 +109,14 @@ public class RecognitionResult {
 
         public void setValueG(BigDecimal valueG) {
             this.valueG = valueG;
+        }
+
+        public String getDisplayUnit() {
+            return displayUnit;
+        }
+
+        public void setDisplayUnit(String displayUnit) {
+            this.displayUnit = displayUnit;
         }
 
         public Integer getStartSec() {

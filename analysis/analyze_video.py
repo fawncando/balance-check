@@ -145,6 +145,11 @@ def normalize_frame(frame):
 
 
 def sartorius_value(profile, text, digit_x0):
+    reading = sartorius_reading(profile, text, digit_x0)
+    return None if reading is None else reading[0]
+
+
+def sartorius_reading(profile, text, digit_x0):
     """Apply the profile's decimal-point and unit rules."""
     rule = PROFILES[profile]["decoder"]
     unit_mg = False
@@ -171,7 +176,7 @@ def sartorius_value(profile, text, digit_x0):
         return None
     if unit_mg:
         value /= 1000
-    return round(value, 8)
+    return round(value, 8), "mg" if unit_mg else "g"
 
 
 def classify_glyph(glyph, templates):
@@ -192,14 +197,14 @@ def classify_glyph(glyph, templates):
 def decode_frame(path, profile, templates, roi=DISPLAY_ROI):
     frame = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     if frame is None:
-        return None, 0.0
+        return None, 0.0, None
     return decode_gray_frame(frame, profile, templates, roi)
 
 
 def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI):
     panel = display_panel(frame, roi)
     if panel is None or panel.size == 0:
-        return None, 0.0
+        return None, 0.0, None
     config = PROFILES[profile]
     if config["decoder"] == "mettler":
         text, confidence = mettler.read_panel(panel, templates)
@@ -207,7 +212,7 @@ def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI):
             value = round(float(text.replace(" ", "")), 8)
         except ValueError:
             value = None
-        return value, confidence
+        return value, confidence, "g"
 
     boxes = sartorius.digit_boxes(panel)
     text = ""
@@ -217,10 +222,12 @@ def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI):
         text += digit
         confidences.append(confidence)
     if "?" in text or not boxes:
-        return None, 0.0
-    value = sartorius_value(profile, text, boxes[0]["x"])
+        return None, 0.0, None
+    reading = sartorius_reading(profile, text, boxes[0]["x"])
     confidence = sum(confidences) / len(confidences) if confidences else 0.0
-    return value, confidence
+    if reading is None:
+        return None, 0.0, None
+    return reading[0], confidence, reading[1]
 
 
 def find_display_roi(frames, profile, templates):
@@ -262,7 +269,7 @@ def find_display_roi(frames, profile, templates):
         score = 0.0
         supported = 0
         for frame in samples:
-            value, confidence = decode_gray_frame(
+            value, confidence, _ = decode_gray_frame(
                 frame, profile, templates, roi
             )
             if value is None or confidence < 0.2:
@@ -312,16 +319,16 @@ def nominal_of(value, nominals):
 def decode_values(frames, profile, templates, roi=DISPLAY_ROI):
     decoded = []
     for second, path in enumerate(frames, 1):
-        value, confidence = decode_frame(path, profile, templates, roi)
-        decoded.append((second, value, confidence))
+        value, confidence, unit = decode_frame(path, profile, templates, roi)
+        decoded.append((second, value, confidence, unit))
     return decoded
 
 
 def collect_weighings(values, nominals):
     runs = []
     current = None
-    for second, value, confidence in values:
-        if current and current["value"] == value:
+    for second, value, confidence, unit in values:
+        if current and current["value"] == value and current["unit"] == unit:
             current["end"] = second
             current["confidences"].append(confidence)
         else:
@@ -331,6 +338,7 @@ def collect_weighings(values, nominals):
                 "start": second,
                 "end": second,
                 "value": value,
+                "unit": unit,
                 "confidences": [confidence],
             }
     if current:
@@ -347,6 +355,7 @@ def collect_weighings(values, nominals):
         run
         for run in runs
         if run["value"] is not None
+        and run["unit"] is not None
         and run["end"] - run["start"] + 1 >= 3
         and run["value"] > 0.01
     ]
@@ -358,6 +367,7 @@ def collect_weighings(values, nominals):
             bucket[-1]["end"] = run["end"]
             if run["end"] - run["start"] > bucket[-1]["longest"]:
                 bucket[-1]["value"] = run["value"]
+                bucket[-1]["unit"] = run["unit"]
                 bucket[-1]["confidence"] = run["confidence"]
                 bucket[-1]["longest"] = run["end"] - run["start"]
         else:
@@ -366,6 +376,7 @@ def collect_weighings(values, nominals):
                     "start": run["start"],
                     "end": run["end"],
                     "value": run["value"],
+                    "unit": run["unit"],
                     "confidence": run["confidence"],
                     "longest": run["end"] - run["start"],
                 }
@@ -389,6 +400,7 @@ def collect_weighings(values, nominals):
                     "startSec": cluster["start"],
                     "endSec": cluster["end"],
                     "confidence": round(cluster["confidence"] * 100, 2),
+                    "displayUnit": cluster["unit"],
                 }
             )
     return weighings
@@ -435,7 +447,7 @@ def analyze(video, profile, ffmpeg, out_path=None, min_confidence=55.0):
         if weighings
         else 0.0
     )
-    anomaly_frames = sum(1 for _, value, _ in values if value is None)
+    anomaly_frames = sum(1 for _, value, _, _ in values if value is None)
     # Tare and transition frames are expected to be undecodable. Review is
     # required only when the vast majority of frames cannot be decoded.
     anomaly_limit = max(30, int(len(frames) * 0.8))

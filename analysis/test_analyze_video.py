@@ -17,6 +17,7 @@ from analyze_video import (  # noqa: E402
     extract_frames,
     normalize_frame,
     nominal_of,
+    sartorius_reading,
     sartorius_value,
 )
 from generate_qr import generate as generate_qr  # noqa: E402
@@ -35,6 +36,8 @@ class SartoriusValueTest(unittest.TestCase):
         self.assertAlmostEqual(sartorius_value("f002b", "200001", 56), 20.0001)
         self.assertAlmostEqual(sartorius_value("f002b", "200008", 86), 2.00008)
         self.assertAlmostEqual(sartorius_value("f002b", "200006", 89), 2.00006)
+        self.assertEqual(sartorius_reading("f002b", "200001", 56)[1], "mg")
+        self.assertEqual(sartorius_reading("f002b", "1000003", 42)[1], "g")
 
     def test_unknown_length_is_rejected(self):
         self.assertIsNone(sartorius_value("f002b", "1234", 56))

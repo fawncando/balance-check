@@ -181,6 +181,7 @@ public class VideoRecognitionService {
         RecognitionResult best = candidates.stream()
                 .min(Comparator
                         .comparingInt(this::readingCount).reversed()
+                        .thenComparingInt(this::displayUnitPenalty)
                         .thenComparingDouble(this::fitPenalty)
                         .thenComparing(RecognitionResult::getProfile))
                 .orElse(null);
@@ -226,8 +227,9 @@ public class VideoRecognitionService {
         List<CalibrationDtos.MeasurementInput> inputs = new ArrayList<>();
         for (RecognitionResult.Weighing weighing : result.getWeighings()) {
             BalanceView.RangeView range = findRange(balance, weighing.getNominalG());
-            boolean displayMg = "f002b".equals(result.getProfile())
-                    && range.getSeqNo() > 1;
+            boolean displayMg = weighing.getDisplayUnit() != null
+                    ? "mg".equalsIgnoreCase(weighing.getDisplayUnit())
+                    : "f002b".equals(result.getProfile()) && range.getSeqNo() > 1;
             int scale = range.getDivisionMg().movePointLeft(3)
                     .stripTrailingZeros().scale();
             BigDecimal displayValue = displayMg
@@ -267,6 +269,15 @@ public class VideoRecognitionService {
 
     private int readingCount(RecognitionResult result) {
         return result.getWeighings() == null ? 0 : result.getWeighings().size();
+    }
+
+    private int displayUnitPenalty(RecognitionResult result) {
+        if (result.getWeighings() == null) {
+            return 1;
+        }
+        return result.getWeighings().stream()
+                .anyMatch(row -> "mg".equalsIgnoreCase(row.getDisplayUnit()))
+                ? 0 : 1;
     }
 
     private double fitPenalty(RecognitionResult result) {

@@ -209,6 +209,25 @@ async function clearCard(row) {
   }
 }
 
+async function deleteUser(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除 ${row.displayName}（${row.username}）吗？删除后该账号无法登录，人员卡自动解绑，但历史记录和审计日志会保留。`,
+      '删除人员账号',
+      { type: 'warning', confirmButtonText: '确认删除' }
+    )
+  } catch {
+    return
+  }
+  try {
+    await http.delete(`/users/${row.id}`)
+    ElMessage.success('人员账号已删除，历史记录已保留')
+    await load()
+  } catch (err) {
+    ElMessage.error(err.message)
+  }
+}
+
 function showQr(row) {
   qr.row = row
   qr.version = Date.now()
@@ -308,7 +327,7 @@ function printCard(row) {
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="430" align="center">
+          <el-table-column label="操作" width="470" align="center">
             <template #default="{ row }">
               <el-button link type="primary" @click="openProfile(row)">权限设置</el-button>
               <el-button link type="warning" @click="openPassword(row)">重置密码</el-button>
@@ -316,6 +335,12 @@ function printCard(row) {
               <el-button v-if="row.cardNo" link type="success" @click="showQr(row)">查看二维码</el-button>
               <el-button v-if="row.cardNo" link type="primary" @click="printCard(row)">打印</el-button>
               <el-button v-if="row.cardNo" link type="danger" @click="clearCard(row)">解绑</el-button>
+              <el-button
+                v-if="row.id !== auth.user?.id"
+                link
+                type="danger"
+                @click="deleteUser(row)"
+              >删除</el-button>
             </template>
           </el-table-column>
         </el-table>

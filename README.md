@@ -122,7 +122,7 @@ python -m venv .venv
 - 天平清单维护：复核确认人员与管理员可新增、编辑天平，维护量程上限、分度值与砝码组，停用后不再出现在新建记录的备选清单
 - 操作日志：管理员按操作类型、操作人与日期段分页查询 audit_log，日志带出操作人姓名
 - 记录表模板：管理员按名称维护多个版本，同一模板同一时间只启用一个版本，启用新版本会自动停用旧版本
-- 人员与权限：管理员新增登录账号、自定义姓名与初始密码、分配检验/复核/管理员角色，修改角色、重置密码、启停账号，并维护唯一人员卡二维码
+- 人员与权限：管理员新增登录账号、自定义姓名与初始密码、分配角色、修改权限、重置密码、启停或删除账号，并维护唯一人员卡二维码；删除后历史记录和审计仍保留
 - 侧栏菜单按角色过滤：新建记录只对检验人员与管理员显示，记录表模板与操作日志只对管理员显示
 
 ### 6.7 测试与交付（批次 8）
@@ -201,7 +201,7 @@ pwsh -File scripts\void-test.ps1           # 作废权限、原因、锁定、�
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
 pwsh -File scripts\batch7-unit-check.ps1   # 天平清单与局域网地址（13 项，不依赖数据库）
 pwsh -File scripts\user-card-test.ps1      # 人员卡权限、唯一性、二维码、解绑与审计（12 项）
-pwsh -File scripts\user-management-test.ps1 # 人员新增、角色、密码、会话失效与审计（26 项）
+pwsh -File scripts\user-management-test.ps1 # 人员新增、角色、密码、会话失效、删除与审计（32 项）
 analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
                                            # 小数点、g/mg、设备档案、人员 QR 与手机入口 QR（8 项）
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe

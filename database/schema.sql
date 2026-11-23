@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS sys_user (
     display_name  VARCHAR(50)  NOT NULL COMMENT '姓名',
     role          VARCHAR(20)  NOT NULL COMMENT 'ADMIN/INSPECTOR/REVIEWER',
     card_no       VARCHAR(20)  NULL COMMENT '人员二维码卡号，用于与视频识别结果比对',
-    status        VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
+    status        VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE'
+                  COMMENT 'ACTIVE/INACTIVE/DELETED',
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_username (username),

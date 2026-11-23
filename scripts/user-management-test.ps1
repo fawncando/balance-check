@@ -165,12 +165,37 @@ $r = Invoke-WebRequest "$base/api/users/not-a-number" -Method Put -WebSession $a
 Check '非法路径参数返回安全的 400' ($r.StatusCode -eq 400 -and
     (($r.Content | ConvertFrom-Json).message -eq '请求参数格式不正确'))
 
-$r = Invoke-WebRequest "$base/api/users/$($created.id)" -Method Put -WebSession $admin `
-    -ContentType 'application/json' `
-    -Body (@{ displayName = '自动测试复核员'; role = 'REVIEWER'; status = 'INACTIVE' } | ConvertTo-Json) `
-    -SkipHttpErrorCheck
-Check '测试结束后自动停用临时账号' ($r.StatusCode -eq 200 -and
-    (($r.Content | ConvertFrom-Json).data.status -eq 'INACTIVE'))
+$r = Invoke-WebRequest "$base/api/users/$($created.id)" -Method Delete `
+    -WebSession $inspector -SkipHttpErrorCheck
+Check '非管理员不能删除人员' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"
+
+$r = Invoke-WebRequest "$base/api/users/$($created.id)" -Method Delete `
+    -WebSession $admin -SkipHttpErrorCheck
+Check '管理员删除人员账号' ($r.StatusCode -eq 200) "status=$($r.StatusCode)"
+
+$r = Invoke-WebRequest "$base/api/users" -WebSession $admin -SkipHttpErrorCheck
+$remainingUsers = @((($r.Content | ConvertFrom-Json).data))
+Check '删除后人员列表不再显示' (@($remainingUsers | Where-Object {
+    $_.id -eq $created.id
+}).Count -eq 0)
+
+$deletedLogin = Login $username $newPassword
+Check '删除后账号不能登录' ($deletedLogin.Response.StatusCode -eq 401) `
+    "status=$($deletedLogin.Response.StatusCode)"
+
+$r = Invoke-WebRequest "$base/api/users/$($created.id)" -Method Delete `
+    -WebSession $admin -SkipHttpErrorCheck
+Check '重复删除返回 404' ($r.StatusCode -eq 404) "status=$($r.StatusCode)"
+
+$r = Invoke-WebRequest "$base/api/logs?action=USER_DELETE&size=100" -WebSession $admin -SkipHttpErrorCheck
+$deleteLogs = @((($r.Content | ConvertFrom-Json).data.items))
+Check '删除动作写入审计日志' (@($deleteLogs | Where-Object {
+    $_.detail -like "$username*"
+}).Count -ge 1)
+
+$r = Invoke-WebRequest "$base/api/users/$($adminUser.id)" -Method Delete `
+    -WebSession $admin -SkipHttpErrorCheck
+Check '管理员不能删除自己' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
 Write-Host ""
 Write-Host ("结果：{0} 通过，{1} 失败" -f $pass, $fail) `

@@ -69,6 +69,15 @@ public class UserController {
         return ApiResponse.ok();
     }
 
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete(@PathVariable Long id,
+                                    HttpSession session,
+                                    HttpServletRequest http) {
+        SessionUser user = CurrentUser.require(session);
+        userAdminService.delete(id, user, http.getRemoteAddr());
+        return ApiResponse.ok();
+    }
+
     @PutMapping("/{id}/card")
     public ApiResponse<UserView> bindCard(@PathVariable Long id,
                                           @RequestBody UserCardRequest request,

@@ -99,9 +99,28 @@ public class UserAdminService {
                 target.getUsername(), ip);
     }
 
+    @Transactional
+    public void delete(Long id, SessionUser actor, String ip) {
+        requireAdmin(actor);
+        User target = requireUser(id);
+        if (target.getId().equals(actor.getId())) {
+            throw new BizException("不能删除自己的账号");
+        }
+        if ("ADMIN".equals(target.getRole())
+                && "ACTIVE".equals(target.getStatus())
+                && userMapper.countOtherActiveAdmins(id) == 0) {
+            throw new BizException("系统必须保留至少一个启用的管理员");
+        }
+        if (userMapper.softDelete(id) == 0) {
+            throw new BizException(404, "用户不存在");
+        }
+        auditService.log(actor.getId(), "USER_DELETE", "USER", String.valueOf(id),
+                target.getUsername() + "：" + target.getDisplayName(), ip);
+    }
+
     private User requireUser(Long id) {
         User user = userMapper.findById(id);
-        if (user == null) {
+        if (user == null || "DELETED".equals(user.getStatus())) {
             throw new BizException(404, "用户不存在");
         }
         return user;

@@ -22,6 +22,7 @@ public interface UserMapper {
     @Select("""
             SELECT id, username, session_version, display_name, role, card_no, status, created_at
             FROM sys_user
+            WHERE status <> 'DELETED'
             ORDER BY id
             """)
     List<User> findAll();
@@ -72,6 +73,15 @@ public interface UserMapper {
             WHERE role = 'ADMIN' AND status = 'ACTIVE' AND id <> #{userId}
             """)
     int countOtherActiveAdmins(@Param("userId") Long userId);
+
+    @Update("""
+            UPDATE sys_user
+            SET status = 'DELETED',
+                card_no = NULL,
+                session_version = session_version + 1
+            WHERE id = #{id} AND status <> 'DELETED'
+            """)
+    int softDelete(@Param("id") Long id);
 
     @Update("UPDATE sys_user SET card_no = #{cardNo} WHERE id = #{id}")
     int updateCardNo(@Param("id") Long id, @Param("cardNo") String cardNo);

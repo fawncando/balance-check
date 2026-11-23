@@ -79,7 +79,7 @@ public class UserCardService {
 
     private User requireUser(Long id) {
         User user = userMapper.findById(id);
-        if (user == null) {
+        if (user == null || "DELETED".equals(user.getStatus())) {
             throw new BizException(404, "用户不存在");
         }
         return user;

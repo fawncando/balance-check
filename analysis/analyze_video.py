@@ -27,6 +27,7 @@ import sartorius_ocr as sartorius  # noqa: E402
 
 PROFILE_FILE = os.path.join(HERE, "profiles.json")
 DISPLAY_ROI = (80, 590, 400, 180)
+REFERENCE_SIZE = (544, 960)
 
 
 def load_profiles():
@@ -123,10 +124,18 @@ def extract_frames_opencv(video, target):
 
 
 def display_panel(frame):
+    frame = normalize_frame(frame)
     x, y, w, h = DISPLAY_ROI
     cropped = frame[y : y + h, x : x + w]
     px, py, pw, ph = sartorius.PANEL
     return cropped[py : py + ph, px : px + pw]
+
+
+def normalize_frame(frame):
+    """Map different phone recording resolutions to the calibrated crop."""
+    if frame is None or frame.shape[1::-1] == REFERENCE_SIZE:
+        return frame
+    return cv2.resize(frame, REFERENCE_SIZE, interpolation=cv2.INTER_AREA)
 
 
 def sartorius_value(profile, text, digit_x0):

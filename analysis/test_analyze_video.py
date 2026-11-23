@@ -15,6 +15,7 @@ from analyze_video import (  # noqa: E402
     PROFILES,
     detect_person_card,
     extract_frames,
+    normalize_frame,
     nominal_of,
     sartorius_value,
 )
@@ -86,6 +87,11 @@ class SartoriusValueTest(unittest.TestCase):
                 os.path.join(tmp, "missing-ffmpeg"),
             )
             self.assertEqual(len(frames), 3)
+
+    def test_phone_resolution_is_normalized_to_reference(self):
+        frame = np.zeros((1920, 1080, 3), dtype=np.uint8)
+        normalized = normalize_frame(frame)
+        self.assertEqual(normalized.shape, (960, 544, 3))
 
 
 if __name__ == "__main__":

@@ -242,6 +242,15 @@ function pad(value) {
 function localDateTime(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`
 }
+
+function datePart(value) {
+  return value ? String(value).slice(0, 10) : '-'
+}
+
+function timePart(value) {
+  const time = value ? String(value).split('T')[1] : ''
+  return time ? time.slice(0, 8) : ''
+}
 </script>
 
 <template>
@@ -324,7 +333,14 @@ function localDateTime(date) {
         </el-table-column>
         <el-table-column prop="balanceCode" label="天平" width="65" />
         <el-table-column v-if="!compact" prop="uploaderName" label="上传人" width="80" />
-        <el-table-column prop="uploadedAt" label="上传时间" width="140" />
+        <el-table-column label="上传时间" width="130">
+          <template #default="{ row }">
+            <div class="datetime-cell">
+              <span>{{ datePart(row.uploadedAt) }}</span>
+              <small>{{ timePart(row.uploadedAt) }}</small>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="displayStatus(row).type" size="small">
@@ -418,6 +434,9 @@ function localDateTime(date) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.datetime-cell { line-height: 1.35; white-space: nowrap; }
+.datetime-cell span, .datetime-cell small { display: block; }
+.datetime-cell small { color: #7a889f; font-size: 11px; }
 @media (max-width: 820px) {
   .mobile-entry-card { align-items: flex-start; flex-direction: column; }
   .selected { align-items: flex-start; flex-direction: column; gap: 10px; }

@@ -71,6 +71,15 @@ function reset() {
 function open(row) {
   router.push(`/calibrations/${row.id}`)
 }
+
+function datePart(value) {
+  return value ? String(value).slice(0, 10) : '-'
+}
+
+function timePart(value) {
+  const time = value ? String(value).split('T')[1] : ''
+  return time ? time.slice(0, 8) : ''
+}
 </script>
 
 <template>
@@ -132,7 +141,14 @@ function open(row) {
         </el-table-column>
         <el-table-column prop="balanceCode" label="天平" width="65" />
         <el-table-column v-if="!compact" prop="department" label="科室" width="70" />
-        <el-table-column prop="calibrationTime" label="校验时间" width="140" />
+        <el-table-column label="校验时间" width="130">
+          <template #default="{ row }">
+            <div class="datetime-cell">
+              <span>{{ datePart(row.calibrationTime) }}</span>
+              <small>{{ timePart(row.calibrationTime) }}</small>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="inspectorName" label="检验人员" width="80" />
         <el-table-column label="结论" width="75" align="center">
           <template #default="{ row }">
@@ -156,7 +172,14 @@ function open(row) {
           <template #default="{ row }">{{ reviewResultText(row.reviewResult) }}</template>
         </el-table-column>
         <el-table-column v-if="!compact" prop="reviewerName" label="复核人" width="80" />
-        <el-table-column v-if="!compact" prop="reviewedAt" label="复核时间" width="140" />
+        <el-table-column v-if="!compact" label="复核时间" width="130">
+          <template #default="{ row }">
+            <div class="datetime-cell">
+              <span>{{ datePart(row.reviewedAt) }}</span>
+              <small>{{ timePart(row.reviewedAt) }}</small>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="65" align="center">
           <template #default="{ row }">
             <el-button link type="primary" @click="open(row)">查看</el-button>
@@ -172,6 +195,9 @@ function open(row) {
 .head .page-title { margin: 0; }
 .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .record-no { font-weight: 600; }
+.datetime-cell { line-height: 1.35; white-space: nowrap; }
+.datetime-cell span, .datetime-cell small { display: block; }
+.datetime-cell small { color: #7a889f; font-size: 11px; }
 .reject-note {
   margin-top: 4px;
   color: #b03a2e;

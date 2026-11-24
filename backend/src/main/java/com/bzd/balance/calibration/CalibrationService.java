@@ -159,12 +159,20 @@ public class CalibrationService {
         if (!"DRAFT".equals(record.getStatus())) {
             throw new BizException("只有草稿可以提交");
         }
+        if (record.getCleanOk() == null || record.getLevelOk() == null
+                || !validInternalCalibration(record.getInternalCalibrationResult())) {
+            throw new BizException("提交前请确认清洁、水平调节和内部校正结果");
+        }
         if (calibrationMapper.submit(id) == 0) {
             throw new BizException("记录状态已变化，请刷新后重试");
         }
         auditService.log(user.getId(), "CALIBRATION_SUBMIT", "CALIBRATION",
                 String.valueOf(id), record.getRecordNo(), ip);
         return get(id, user);
+    }
+
+    private boolean validInternalCalibration(String value) {
+        return "是".equals(value) || "否".equals(value) || "NA".equals(value);
     }
 
     @Transactional

@@ -162,6 +162,32 @@ def read_gray_frame(frame, nominals):
     return None, 0.0, None
 
 
+def read_native_digits(frame, reference_roi, reference_size=(544, 960)):
+    """Read digits from the native-resolution equivalent of a reference ROI."""
+    if frame is None or frame.size == 0:
+        return None, 0.0
+    scale_x = frame.shape[1] / reference_size[0]
+    scale_y = frame.shape[0] / reference_size[1]
+    x, y, width, height = reference_roi
+    x0 = max(0, int(x * scale_x))
+    y0 = max(0, int(y * scale_y))
+    x1 = min(frame.shape[1], int((x + width) * scale_x))
+    y1 = min(frame.shape[0], int((y + height) * scale_y))
+    crop = frame[y0:y1, x0:x1]
+    if crop.size == 0:
+        return None, 0.0
+    result, _ = _engine()(crop, use_det=False, use_cls=False, use_rec=True)
+    best = None
+    for item in result or []:
+        if not item or len(item) < 2:
+            continue
+        digits = "".join(char for char in str(item[0]) if char.isdigit())
+        score = float(item[1])
+        if 5 <= len(digits) <= 8 and (best is None or score > best[1]):
+            best = (digits, score)
+    return best if best else (None, 0.0)
+
+
 def _rotate(image, rotation):
     if rotation == 90:
         return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)

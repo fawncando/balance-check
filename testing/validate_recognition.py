@@ -17,7 +17,7 @@ CASES = {
         "video": "Balance_2.mp4",
         "values": [
             200.0009,
-            200.0,
+            200.0008,
             200.0009,
             50.0003,
             50.0002,
@@ -27,6 +27,22 @@ CASES = {
             10.0001,
         ],
         "units": ["g"] * 9,
+    },
+    "f002c": {
+        "video": "VID_20261124_155020.mp4",
+        "values": [
+            100.0573,
+            100.0573,
+            100.0573,
+            20.00015,
+            20.00015,
+            20.00013,
+            2.01486,
+            2.01473,
+            2.0147,
+        ],
+        "units": ["g", "g", "g", "mg", "mg", "mg", "mg", "mg", "mg"],
+        "verdict": "FAIL",
     },
     "f002a": {
         "video": "Balance_1_first.mp4",
@@ -87,8 +103,11 @@ def main():
         actual = [item["valueG"] for item in result["weighings"]]
         actual_units = [item.get("displayUnit") for item in result["weighings"]]
         expected = case["values"]
-        if result["verdict"] != "PASS":
-            failures.append(f"{profile}: verdict {result['verdict']}")
+        expected_verdict = case.get("verdict", "PASS")
+        if result["verdict"] != expected_verdict:
+            failures.append(
+                f"{profile}: verdict {result['verdict']}, expected {expected_verdict}"
+            )
         if len(actual) != len(expected):
             failures.append(
                 f"{profile}: expected {len(expected)} readings, got {len(actual)}"

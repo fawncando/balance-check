@@ -35,7 +35,7 @@ python analyze_video.py `
 | f001_mg | F001（同上，显示单位为 mg） | Mettler Toledo 图形屏低机位 |
 | f002a | F002（120 g 量程，100 g；40 g 量程，20/2 g） | Sartorius 七段屏，显示 g |
 | f002b | F002（同上，第二量程显示 mg） | Sartorius 七段屏，g + mg |
-| f002c | F002（同类新机位，g/mg 自动判定） | Sartorius 七段屏，完整数字模板 |
+| f002c | F002（同类新机位，g/mg 自动判定） | Sartorius 七段屏，完整数字模板 + 原生分辨率 OCR 校正 |
 | f003 | F003（220 g，200/50/10 g） | Sartorius 七段屏，黑底白字 |
 
 后端选择 F002 时会比较 `f002a`、`f002b` 与 `f002c`，采用能够解出更多完整称量的结果。

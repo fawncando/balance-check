@@ -68,6 +68,15 @@ try {
     $r = Invoke-WebRequest "$base/api/calibrations/$goodId" -Method Put -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
     Check '修改草稿' ($r.StatusCode -eq 200) "status=$($r.StatusCode)"
 
+    $incompleteBody = @{ balanceId = 1; calibrationTime = '2026-10-17T09:12:00'; cleanOk = $null; levelOk = $null
+               internalCalibrationResult = $null; remark = '过程信息未确认'; measurements = $single } | ConvertTo-Json -Depth 5
+    $r = Invoke-WebRequest "$base/api/calibrations/$goodId" -Method Put -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $incompleteBody -SkipHttpErrorCheck
+    Check '草稿允许暂不填写过程信息' ($r.StatusCode -eq 200) "status=$($r.StatusCode)"
+    $r = Invoke-WebRequest "$base/api/calibrations/$goodId/submit" -Method Post -WebSession $web -SkipHttpErrorCheck
+    Check '过程信息未确认时禁止提交' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
+    $r = Invoke-WebRequest "$base/api/calibrations/$goodId" -Method Put -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
+    Check '补齐过程信息后可保存' ($r.StatusCode -eq 200) "status=$($r.StatusCode)"
+
     $r = Invoke-WebRequest "$base/api/calibrations/$goodId/submit" -Method Post -WebSession $web -SkipHttpErrorCheck
     $submitted = ($r.Content | ConvertFrom-Json).data
     Check '提交进入待复核' ($submitted.status -eq 'SUBMITTED' -and $submitted.submittedAt) "status=$($submitted.status)"

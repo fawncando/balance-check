@@ -221,6 +221,13 @@ def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI, nominals=None)
     config = PROFILES[profile]
     if config["decoder"] == "generic":
         return generic_ocr.read_gray_frame(frame, nominals or config["nominals"])
+    if config.get("native_ocr"):
+        native_roi = tuple(config.get("native_ocr_roi", roi))
+        digits, native_confidence = generic_ocr.read_native_digits(frame, native_roi)
+        if digits:
+            reading = sartorius_reading(profile, digits, 0)
+            if reading:
+                return reading[0], native_confidence, reading[1]
     panel = display_panel(frame, roi)
     if panel is None or panel.size == 0:
         return None, 0.0, None

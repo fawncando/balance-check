@@ -205,7 +205,7 @@ python -m venv .venv
 ```powershell
 pwsh -File scripts\test-all.ps1            # 一键：后端编译 + 独立校验 + 前端测试（后端在线时含接口冒烟）
 pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、CORS、Cookie、会话与上传（28 项）
-pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（14 项）
+pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、过程信息校验、提交锁定、双量程（17 项）
 pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、分页、导出（40 项）
 pwsh -File scripts\batch6-unit-check.ps1   # 复核/作废规则、记录表渲染与识别失败文案（22 项）
 pwsh -File scripts\void-test.ps1           # 作废权限、原因、锁定、查询与审计（13 项）

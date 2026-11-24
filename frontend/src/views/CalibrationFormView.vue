@@ -23,6 +23,11 @@ const recordId = ref(null)
 const recordNo = ref('')
 const loading = ref(false)
 const saving = ref(false)
+const processComplete = computed(() =>
+  form.cleanOk !== null && form.cleanOk !== undefined
+    && form.levelOk !== null && form.levelOk !== undefined
+    && ['是', '否', 'NA'].includes(form.internalCalibrationResult)
+)
 const analysis = reactive({
   videoId: null,
   identityVerified: null,
@@ -199,6 +204,10 @@ async function save(submitAfter = false) {
   }
   if (rows.value.length === 0 || filled.value < rows.value.length) {
     ElMessage.warning(`请填写全部 ${rows.value.length} 次示值`)
+    return
+  }
+  if (submitAfter && !processComplete.value) {
+    ElMessage.warning('请先确认清洁、水平调节和内部校正结果')
     return
   }
   if (!recordId.value && form.manualEntryReason.trim().length < 2) {
@@ -391,7 +400,7 @@ async function save(submitAfter = false) {
       </div>
       <div class="actions">
         <el-button :loading="saving" @click="save(false)">保存草稿</el-button>
-        <el-button type="primary" :loading="saving" @click="save(true)">保存并提交复核</el-button>
+        <el-button type="primary" :loading="saving" :disabled="!processComplete" @click="save(true)">保存并提交复核</el-button>
         <el-button link @click="router.push('/records')">返回记录列表</el-button>
       </div>
       <div class="note">提交后记录进入待复核，不能再编辑；复核确认后永久锁定。</div>

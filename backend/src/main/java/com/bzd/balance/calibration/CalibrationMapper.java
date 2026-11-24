@@ -80,6 +80,7 @@ public interface CalibrationMapper {
      * inspectorId 由服务层按角色决定，检验人员只能查到自己创建的记录。
      */
     @Select("""
+            <script>
             SELECT c.id, c.record_no, c.balance_id, c.video_id,
                    v.person_card, v.identity_verified, v.analysis_confidence, v.anomaly_frames,
                    b.code AS balance_code, b.unique_no AS balance_unique_no,
@@ -106,15 +107,42 @@ public interface CalibrationMapper {
               AND (#{timeFrom,jdbcType=TIMESTAMP} IS NULL
                    OR c.calibration_time >= #{timeFrom,jdbcType=TIMESTAMP})
               AND (#{timeTo,jdbcType=TIMESTAMP} IS NULL
-                   OR c.calibration_time < #{timeTo,jdbcType=TIMESTAMP})
+                   OR c.calibration_time &lt; #{timeTo,jdbcType=TIMESTAMP})
             ORDER BY c.calibration_time DESC, c.id DESC
+            <if test="limit != null and limit > 0">
+                LIMIT #{limit} OFFSET #{offset}
+            </if>
+            </script>
             """)
     List<CalibrationDtos.RecordView> search(@Param("inspectorId") Long inspectorId,
                                             @Param("balanceId") Long balanceId,
                                             @Param("status") String status,
                                             @Param("recordNo") String recordNo,
                                             @Param("timeFrom") LocalDateTime timeFrom,
-                                            @Param("timeTo") LocalDateTime timeTo);
+                                            @Param("timeTo") LocalDateTime timeTo,
+                                            @Param("offset") int offset,
+                                            @Param("limit") Integer limit);
+
+    /** 与 search 相同的过滤条件，返回总条数，供分页使用。 */
+    @Select("""
+            SELECT COUNT(*)
+            FROM calibration c
+            WHERE (#{inspectorId,jdbcType=BIGINT} IS NULL OR c.inspector_id = #{inspectorId,jdbcType=BIGINT})
+              AND (#{balanceId,jdbcType=BIGINT} IS NULL OR c.balance_id = #{balanceId,jdbcType=BIGINT})
+              AND (#{status,jdbcType=VARCHAR} IS NULL OR c.status = #{status,jdbcType=VARCHAR})
+              AND (#{recordNo,jdbcType=VARCHAR} IS NULL
+                   OR c.record_no LIKE CONCAT('%', #{recordNo,jdbcType=VARCHAR}, '%'))
+              AND (#{timeFrom,jdbcType=TIMESTAMP} IS NULL
+                   OR c.calibration_time >= #{timeFrom,jdbcType=TIMESTAMP})
+              AND (#{timeTo,jdbcType=TIMESTAMP} IS NULL
+                   OR c.calibration_time < #{timeTo,jdbcType=TIMESTAMP})
+            """)
+    long countSearch(@Param("inspectorId") Long inspectorId,
+                     @Param("balanceId") Long balanceId,
+                     @Param("status") String status,
+                     @Param("recordNo") String recordNo,
+                     @Param("timeFrom") LocalDateTime timeFrom,
+                     @Param("timeTo") LocalDateTime timeTo);
 
     @Update("""
             UPDATE calibration

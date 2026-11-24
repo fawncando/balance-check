@@ -25,6 +25,7 @@ public interface VideoMapper {
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
+                   (v.relative_path IS NOT NULL AND v.relative_path <> '') AS source_available,
                    c.id AS calibration_id, c.status AS calibration_status,
                    rv.result AS calibration_review_result,
                    rv.comment AS calibration_review_comment,
@@ -42,6 +43,7 @@ public interface VideoMapper {
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
+                   (v.relative_path IS NOT NULL AND v.relative_path <> '') AS source_available,
                    c.id AS calibration_id, c.status AS calibration_status,
                    rv.result AS calibration_review_result,
                    rv.comment AS calibration_review_comment,
@@ -63,6 +65,7 @@ public interface VideoMapper {
 
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
+                   (v.relative_path IS NOT NULL AND v.relative_path <> '') AS source_available,
                    c.id AS calibration_id, c.status AS calibration_status,
                    rv.result AS calibration_review_result,
                    rv.comment AS calibration_review_comment,
@@ -117,6 +120,13 @@ public interface VideoMapper {
                          @Param("profile") String profile,
                          @Param("confidence") BigDecimal confidence,
                          @Param("anomalyFrames") Integer anomalyFrames);
+
+    @Update("""
+            UPDATE video
+            SET relative_path = NULL, source_deleted_at = NOW()
+            WHERE id = #{id}
+            """)
+    int clearSource(@Param("id") Long id);
 
     @Delete("DELETE FROM video WHERE id = #{id}")
     void deleteById(@Param("id") Long id);

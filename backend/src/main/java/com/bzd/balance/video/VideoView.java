@@ -8,6 +8,7 @@ public class VideoView {
     private Long id;
     private String originalName;
     private String storedName;
+    private Boolean sourceAvailable;
     private Long sizeBytes;
     private Long balanceId;
     private String balanceCode;
@@ -48,6 +49,15 @@ public class VideoView {
 
     public void setStoredName(String storedName) {
         this.storedName = storedName;
+    }
+
+    /** 源视频文件是否仍在服务器上（识别成功按策略清理后为 false）。 */
+    public Boolean getSourceAvailable() {
+        return sourceAvailable;
+    }
+
+    public void setSourceAvailable(Boolean sourceAvailable) {
+        this.sourceAvailable = sourceAvailable;
     }
 
     public Long getSizeBytes() {

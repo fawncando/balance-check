@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class RecognitionProcessService {
+
+    private static final Logger log = LoggerFactory.getLogger(RecognitionProcessService.class);
 
     private final ObjectMapper objectMapper;
     private final String configuredPython;
@@ -67,15 +71,17 @@ public class RecognitionProcessService {
                 throw new BizException(500, "视频识别超时");
             }
             if (process.exitValue() != 0) {
-                throw new BizException(500,
-                        "视频识别进程失败：" + tail(logFile, 1200));
+                log.error("识别进程失败：profile={}，视频={}，exit={}，日志尾部={}",
+                        profile, videoPath, process.exitValue(), tail(logFile, 4000));
+                throw new BizException(500, RecognitionMessages.PROCESS_FAILURE);
             }
             return objectMapper.readValue(resultFile.toFile(), RecognitionResult.class);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new BizException(500, "视频识别被中断");
         } catch (IOException ex) {
-            throw new BizException(500, "启动视频识别失败：" + ex.getMessage());
+            log.error("启动识别进程失败：profile={}，视频={}", profile, videoPath, ex);
+            throw new BizException(500, RecognitionMessages.START_FAILURE);
         } finally {
             deleteQuietly(resultFile);
             deleteQuietly(logFile);
@@ -96,8 +102,10 @@ public class RecognitionProcessService {
                 .map(path -> path.toAbsolutePath().normalize())
                 .filter(Files::isRegularFile)
                 .findFirst()
-                .orElseThrow(() -> new BizException(500,
-                        "找不到识别脚本：" + configuredScript));
+                .orElseThrow(() -> {
+                    log.error("找不到视频识别脚本：{}", configuredScript);
+                    return new BizException(500, RecognitionMessages.NOT_READY);
+                });
     }
 
     private String resolveExecutable(String configured) {

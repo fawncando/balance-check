@@ -207,8 +207,12 @@ public class CalibrationService {
         return view;
     }
 
-    /** 记录查询：检验人员只看自己的记录，复核确认人员与管理员看全部。 */
-    public List<CalibrationDtos.RecordView> list(CalibrationDtos.Query query, SessionUser user) {
+    /** 分页结果：items 为当前页，total 为满足条件的总条数。 */
+    public record Page(List<CalibrationDtos.RecordView> items, long total) {
+    }
+
+    /** 记录查询：检验人员只看自己的记录，复核确认人员与管理员看全部；pageSize 为空时返回全部。 */
+    public Page list(CalibrationDtos.Query query, SessionUser user) {
         CalibrationDtos.Query condition = query == null ? new CalibrationDtos.Query() : query;
         String status = trimToNull(condition.getStatus());
         if (status != null) {
@@ -222,11 +226,30 @@ public class CalibrationService {
         if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
             throw new BizException("开始日期不能晚于结束日期");
         }
+        int page = condition.getPage() == null ? 1 : condition.getPage();
+        Integer pageSize = condition.getPageSize();
+        if (page < 1) {
+            throw new BizException("页码必须大于 0");
+        }
+        if (pageSize != null && (pageSize < 1 || pageSize > 200)) {
+            throw new BizException("每页条数必须在 1 到 200 之间");
+        }
         Long inspectorId = user.isInspector() ? user.getId() : null;
-        return calibrationMapper.search(inspectorId, condition.getBalanceId(), status,
-                trimToNull(condition.getRecordNo()),
-                dateFrom == null ? null : dateFrom.atStartOfDay(),
-                dateTo == null ? null : dateTo.plusDays(1).atStartOfDay());
+        Long balanceId = condition.getBalanceId();
+        String recordNo = trimToNull(condition.getRecordNo());
+        LocalDateTime timeFrom = dateFrom == null ? null : dateFrom.atStartOfDay();
+        LocalDateTime timeTo = dateTo == null ? null : dateTo.plusDays(1).atStartOfDay();
+        if (pageSize == null) {
+            List<CalibrationDtos.RecordView> items = calibrationMapper.search(
+                    inspectorId, balanceId, status, recordNo, timeFrom, timeTo, 0, null);
+            return new Page(items, items.size());
+        }
+        long total = calibrationMapper.countSearch(
+                inspectorId, balanceId, status, recordNo, timeFrom, timeTo);
+        int offset = (page - 1) * pageSize;
+        List<CalibrationDtos.RecordView> items = calibrationMapper.search(
+                inspectorId, balanceId, status, recordNo, timeFrom, timeTo, offset, pageSize);
+        return new Page(items, total);
     }
 
     private List<CalibrationMeasurement> buildMeasurements(Calibration record,

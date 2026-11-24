@@ -383,12 +383,16 @@ function timePart(value) {
               @click="analyzeVideo(row)"
             >开始识别</el-button>
             <el-button
-              v-else-if="row.status === 'FAILED' && row.uploaderName === auth.user?.displayName"
+              v-else-if="row.status === 'FAILED' && row.uploaderName === auth.user?.displayName && row.sourceAvailable !== false"
               link
               type="primary"
               :loading="analyzingId === row.id"
               @click="analyzeVideo(row)"
             >重新识别</el-button>
+            <span
+              v-else-if="row.status === 'FAILED' && row.sourceAvailable === false"
+              class="note"
+            >源视频已清理，请重新上传</span>
             <el-button
               v-else-if="row.status === 'ANALYZED' && row.calibrationId"
               link

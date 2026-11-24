@@ -65,7 +65,7 @@ if ($SkipBuild) {
     Add-Result '后端编译' ($buildCode -eq 0) ("exit {0}" -f $buildCode)
 }
 
-Invoke-Child '批次 6 独立校验（复核规则、记录表渲染）' (Join-Path $repo 'scripts\batch6-unit-check.ps1') $unitArgs
+Invoke-Child '批次 6 独立校验（复核规则、记录表渲染与失败提示）' (Join-Path $repo 'scripts\batch6-unit-check.ps1') $unitArgs
 Invoke-Child '批次 7 独立校验（天平清单规则）' (Join-Path $repo 'scripts\batch7-unit-check.ps1') $unitArgs
 
 $python = $env:APP_RECOGNITION_PYTHON

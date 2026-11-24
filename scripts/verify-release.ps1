@@ -52,6 +52,9 @@ Check '初始化数据 seed.sql' (Test-Path (Join-Path $root 'database\seed.sql'
 Check '数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrations\001_recognition_enhancements.sql'))
 Check '作废数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrations\002_record_voiding.sql'))
 Check '会话版本数据库迁移脚本' (Test-Path (Join-Path $root 'database\migrations\004_user_session_version.sql'))
+$migrationDir = Join-Path $root 'database\migrations'
+$migrationCount = if (Test-Path $migrationDir) { @(Get-ChildItem $migrationDir -Filter '*.sql').Count } else { 0 }
+Check '数据库迁移脚本齐全（001-005）' ($migrationCount -ge 5) ("{0} 个" -f $migrationCount)
 Check '作废记录测试脚本' (Test-Path (Join-Path $root 'scripts\void-test.ps1'))
 Check '人员卡测试脚本' (Test-Path (Join-Path $root 'scripts\user-card-test.ps1'))
 Check '人员账号管理测试脚本' (Test-Path (Join-Path $root 'scripts\user-management-test.ps1'))

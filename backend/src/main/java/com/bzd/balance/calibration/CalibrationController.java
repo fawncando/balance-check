@@ -104,11 +104,15 @@ public class CalibrationController {
         return ApiResponse.ok(calibrationService.get(id, user));
     }
 
-    /** 记录查询：按天平、状态、记录编号与日期段过滤。 */
+    /** 记录查询：按天平、状态、记录编号与日期段过滤；传 pageSize 时按页返回，总数放在 X-Total-Count。 */
     @GetMapping
-    public ApiResponse<List<CalibrationDtos.RecordView>> list(CalibrationDtos.Query query, HttpSession session) {
+    public ResponseEntity<ApiResponse<List<CalibrationDtos.RecordView>>> list(
+            CalibrationDtos.Query query, HttpSession session) {
         SessionUser user = CurrentUser.require(session);
-        return ApiResponse.ok(calibrationService.list(query, user));
+        CalibrationService.Page page = calibrationService.list(query, user);
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(page.total()))
+                .body(ApiResponse.ok(page.items()));
     }
 
     /**

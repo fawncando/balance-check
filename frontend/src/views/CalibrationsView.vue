@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import http from '../api/http'
+import http, { getPage } from '../api/http'
 import { auth } from '../stores/auth'
 import { reviewResultText, reviewStateOf } from '../utils/review'
 
@@ -10,6 +10,9 @@ const router = useRouter()
 const records = ref([])
 const balances = ref([])
 const loading = ref(false)
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const filters = reactive({ recordNo: '', balanceId: null, status: '' })
 const dateRange = ref([])
 const compact = ref(false)
@@ -56,7 +59,9 @@ function queryParams() {
     balanceId: filters.balanceId || undefined,
     status: filters.status || undefined,
     dateFrom: from || undefined,
-    dateTo: to || undefined
+    dateTo: to || undefined,
+    page: page.value,
+    pageSize: pageSize.value
   }
 }
 
@@ -64,7 +69,9 @@ async function load(silent = false) {
   if (silent && loading.value) return
   if (!silent) loading.value = true
   try {
-    records.value = await http.get('/calibrations', { params: queryParams() })
+    const result = await getPage('/calibrations', { params: queryParams() })
+    records.value = result.items
+    total.value = result.total
   } catch (err) {
     if (!silent) ElMessage.error(err.message)
   } finally {
@@ -72,11 +79,22 @@ async function load(silent = false) {
   }
 }
 
+function search() {
+  page.value = 1
+  load()
+}
+
+function onPageSizeChange() {
+  page.value = 1
+  load()
+}
+
 function reset() {
   filters.recordNo = ''
   filters.balanceId = null
   filters.status = ''
   dateRange.value = []
+  page.value = 1
   load()
 }
 
@@ -112,7 +130,7 @@ function timePart(value) {
           placeholder="按记录编号搜索"
           clearable
           style="width: 190px"
-          @keyup.enter="load"
+          @keyup.enter="search"
         />
         <el-select v-model="filters.balanceId" placeholder="全部天平" clearable style="width: 130px">
           <el-option v-for="balance in balances" :key="balance.id" :label="balance.code" :value="balance.id" />
@@ -131,13 +149,13 @@ function timePart(value) {
           end-placeholder="结束日期"
           style="width: 230px"
         />
-        <el-button type="primary" @click="load">查询</el-button>
+        <el-button type="primary" @click="search">查询</el-button>
         <el-button @click="reset">重置</el-button>
       </div>
     </div>
 
     <div class="card">
-      <h2>记录列表<span class="hint">共 {{ records.length }} 条 · 按校验时间倒序</span></h2>
+      <h2>记录列表<span class="hint">共 {{ total }} 条 · 按校验时间倒序</span></h2>
       <el-table :data="records" v-loading="loading" size="small" empty-text="没有符合条件的记录">
         <el-table-column label="记录编号" width="180">
           <template #default="{ row }">
@@ -198,6 +216,18 @@ function timePart(value) {
           </template>
         </el-table-column>
       </el-table>
+      <div class="pager">
+        <el-pagination
+          v-model:current-page="page"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next"
+          background
+          @current-change="load()"
+          @size-change="onPageSizeChange"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -210,6 +240,7 @@ function timePart(value) {
 .datetime-cell { line-height: 1.35; white-space: nowrap; }
 .datetime-cell span, .datetime-cell small { display: block; }
 .datetime-cell small { color: #7a889f; font-size: 11px; }
+.pager { display: flex; justify-content: flex-end; margin-top: 14px; }
 .reject-note {
   margin-top: 4px;
   color: #b03a2e;

@@ -9,6 +9,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import jakarta.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +56,7 @@ public class VideoRecognitionService {
     private final UserMapper userMapper;
     private final Path uploadRoot;
     private final boolean deleteSourceAfterSuccess;
+    private final ExecutorService profileExecutor;
 
     public VideoRecognitionService(VideoMapper videoMapper,
                                    BalanceMapper balanceMapper,
@@ -64,7 +71,10 @@ public class VideoRecognitionService {
                                    StorageService storageService,
                                    @org.springframework.beans.factory.annotation.Value(
                                            "${app.video.delete-source-after-success:true}")
-                                   boolean deleteSourceAfterSuccess) {
+                                   boolean deleteSourceAfterSuccess,
+                                   @org.springframework.beans.factory.annotation.Value(
+                                           "${app.recognition.profile-parallelism:3}")
+                                   int profileParallelism) {
         this.videoMapper = videoMapper;
         this.balanceMapper = balanceMapper;
         this.balanceService = balanceService;
@@ -77,6 +87,17 @@ public class VideoRecognitionService {
         this.userMapper = userMapper;
         this.uploadRoot = storageService.getRoot();
         this.deleteSourceAfterSuccess = deleteSourceAfterSuccess;
+        int poolSize = Math.max(1, profileParallelism);
+        this.profileExecutor = Executors.newFixedThreadPool(poolSize, runnable -> {
+            Thread thread = new Thread(runnable, "recognition-profile");
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+
+    @PreDestroy
+    public void shutdownProfileExecutor() {
+        profileExecutor.shutdownNow();
     }
 
     public VideoView startAnalysis(Long videoId, SessionUser user, String ip) {
@@ -205,14 +226,25 @@ public class VideoRecognitionService {
 
         List<RecognitionResult> candidates = new ArrayList<>();
         List<String> errors = new ArrayList<>();
+        // 同一视频的多个显示档案并行识别：F002 有 3 个档案，串行会线性拉长等待时间。
+        List<Future<RecognitionResult>> futures = new ArrayList<>();
         for (String profile : profiles) {
+            futures.add(profileExecutor.submit(
+                    () -> recognitionProcessService.run(videoPath, profile, nominals)));
+        }
+        for (int i = 0; i < futures.size(); i++) {
+            String profile = profiles.get(i);
             try {
-                candidates.add(recognitionProcessService.run(videoPath, profile, nominals));
-            } catch (RuntimeException ex) {
-                String safeMessage = ex instanceof BizException && ex.getMessage() != null
-                        && !ex.getMessage().isBlank()
-                                ? ex.getMessage() : RecognitionMessages.UNEXPECTED_FAILURE;
-                log.warn("识别档案 {} 执行失败：{}", profile, ex.toString());
+                candidates.add(futures.get(i).get());
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new BizException("视频识别被中断");
+            } catch (ExecutionException ex) {
+                Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+                String safeMessage = cause instanceof BizException && cause.getMessage() != null
+                        && !cause.getMessage().isBlank()
+                                ? cause.getMessage() : RecognitionMessages.UNEXPECTED_FAILURE;
+                log.warn("识别档案 {} 执行失败：{}", profile, cause.toString());
                 errors.add(safeMessage);
             }
         }

@@ -14,6 +14,7 @@ public class VideoView {
     private String balanceCode;
     private Long calibrationId;
     private String calibrationStatus;
+    private String calibrationExternalResult;
     private String calibrationReviewResult;
     private String calibrationReviewComment;
     private String uploaderName;
@@ -98,6 +99,14 @@ public class VideoView {
 
     public void setCalibrationStatus(String calibrationStatus) {
         this.calibrationStatus = calibrationStatus;
+    }
+
+    public String getCalibrationExternalResult() {
+        return calibrationExternalResult;
+    }
+
+    public void setCalibrationExternalResult(String calibrationExternalResult) {
+        this.calibrationExternalResult = calibrationExternalResult;
     }
 
     public String getCalibrationReviewResult() {

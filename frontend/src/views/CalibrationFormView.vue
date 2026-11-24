@@ -400,8 +400,11 @@ async function save(submitAfter = false) {
       </div>
       <div class="actions">
         <el-button :loading="saving" @click="save(false)">保存草稿</el-button>
-        <el-button type="primary" :loading="saving" :disabled="!processComplete" @click="save(true)">保存并提交复核</el-button>
+        <el-button type="primary" :loading="saving" @click="save(true)">保存并提交复核</el-button>
         <el-button link @click="router.push('/records')">返回记录列表</el-button>
+      </div>
+      <div v-if="!processComplete" class="process-required">
+        提交前必须选择清洁、水平调节和内部校正结果；可以先保存草稿。
       </div>
       <div class="note">提交后记录进入待复核，不能再编辑；复核确认后永久锁定。</div>
     </div>
@@ -437,4 +440,5 @@ async function save(submitAfter = false) {
 .radios span { color: #5c6b87; margin-left: 8px; }
 .radios span:first-child { margin-left: 0; }
 .actions { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; }
+.process-required { margin-bottom: 8px; color: #c45656; font-size: 13px; }
 </style>

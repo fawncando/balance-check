@@ -72,6 +72,9 @@ function displayStatus(row) {
   if (row.calibrationStatus === 'DRAFT' && row.calibrationReviewResult === 'REJECTED') {
     return { text: '已退回', type: 'danger' }
   }
+  if (row.calibrationStatus === 'DRAFT' && row.calibrationExternalResult === '否') {
+    return { text: '超差待确认', type: 'danger' }
+  }
   if (row.status === 'ANALYZED' && row.calibrationStatus) {
     return calibrationStatusMap[row.calibrationStatus] || { text: row.calibrationStatus, type: 'info' }
   }
@@ -399,7 +402,11 @@ function timePart(value) {
               link
               type="primary"
               @click="openCalibration(row)"
-            >{{ isReturned(row) ? '修改退回记录' : row.calibrationStatus === 'DRAFT' ? '确认结果' : '查看记录' }}</el-button>
+            >{{ isReturned(row)
+              ? '修改退回记录'
+              : row.calibrationStatus === 'DRAFT'
+                ? row.calibrationExternalResult === '否' ? '处理超差' : '确认结果'
+                : '查看记录' }}</el-button>
             <el-button
               v-if="row.status === 'UPLOADED' && row.uploaderName === auth.user?.displayName"
               link

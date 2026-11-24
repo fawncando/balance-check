@@ -11,6 +11,14 @@ $ErrorActionPreference = 'Continue'
 $script:pass = 0
 $script:warn = 0
 $script:fail = 0
+$repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
+$runtimeEnv = Join-Path $repo '.local\runtime.env.ps1'
+if (Test-Path -LiteralPath $runtimeEnv) {
+    . $runtimeEnv
+}
+if (-not $JavaHome -and $env:JAVA_HOME) {
+    $JavaHome = $env:JAVA_HOME
+}
 
 function Report([string]$level, [string]$name, [string]$detail = '') {
     switch ($level) {
@@ -79,7 +87,6 @@ if ($npm) { Report 'PASS' 'npm' ((& npm -v) | Out-String).Trim() }
 else { Report 'WARN' '找不到 npm' '仅前端构建需要' }
 
 # Python 识别环境
-$repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
 $python = $null
 if ($env:APP_RECOGNITION_PYTHON -and (Test-Path $env:APP_RECOGNITION_PYTHON)) {
     $python = $env:APP_RECOGNITION_PYTHON
@@ -97,7 +104,7 @@ if ($python) {
         Report 'FAIL' 'Python 识别依赖缺失' '执行 python -m pip install -r analysis\requirements.txt'
     }
 } else {
-    Report 'FAIL' '找不到 Python' '安装 Python 3.11 及以上，或设置 APP_RECOGNITION_PYTHON'
+    Report 'FAIL' '找不到 Python' '安装 Python 3.11-3.12（推荐 3.12），或设置 APP_RECOGNITION_PYTHON'
 }
 $analysisScript = Join-Path $repo 'analysis\analyze_video.py'
 if (Test-Path $analysisScript) { Report 'PASS' '识别入口脚本' $analysisScript }

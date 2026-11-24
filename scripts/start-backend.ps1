@@ -18,6 +18,9 @@ $runtimeEnv = Join-Path $root '.local\runtime.env.ps1'
 if (Test-Path -LiteralPath $runtimeEnv) {
     . $runtimeEnv
 }
+if (-not $JavaHome -and $env:JAVA_HOME) {
+    $JavaHome = $env:JAVA_HOME
+}
 
 if (-not $Jar) {
     $releaseJar = Join-Path $root 'backend\balance-check.jar'

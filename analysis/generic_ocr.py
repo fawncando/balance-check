@@ -128,9 +128,14 @@ def choose_candidate(tokens, nominals, image_height, image_width):
 def _tokens(result):
     tokens = []
     for item in result or []:
-        if not item or len(item) < 3:
+        if not item or len(item) < 2:
             continue
-        box, text, confidence = item[0], item[1], item[2]
+        if len(item) >= 3 and not isinstance(item[0], str):
+            box, text, confidence = item[0], item[1], item[2]
+        elif isinstance(item[0], str):
+            continue
+        else:
+            continue
         tokens.append(
             {
                 "box": _box_metrics(box),
@@ -139,6 +144,22 @@ def _tokens(result):
             }
         )
     return tokens
+
+
+def _text_confidence(item):
+    """Read text and confidence from both supported RapidOCR result layouts."""
+    if not item or len(item) < 2:
+        return None
+    if len(item) >= 3 and not isinstance(item[0], str):
+        text, confidence = item[1], item[2]
+    elif isinstance(item[0], str):
+        text, confidence = item[0], item[1]
+    else:
+        return None
+    try:
+        return str(text), float(confidence)
+    except (TypeError, ValueError):
+        return None
 
 
 def read_gray_frame(frame, nominals):
@@ -179,10 +200,11 @@ def read_native_digits(frame, reference_roi, reference_size=(544, 960)):
     result, _ = _engine()(crop, use_det=False, use_cls=False, use_rec=True)
     best = None
     for item in result or []:
-        if not item or len(item) < 2:
+        parsed = _text_confidence(item)
+        if not parsed:
             continue
-        digits = "".join(char for char in str(item[0]) if char.isdigit())
-        score = float(item[1])
+        text, score = parsed
+        digits = "".join(char for char in text if char.isdigit())
         if 5 <= len(digits) <= 8 and (best is None or score > best[1]):
             best = (digits, score)
     return best if best else (None, 0.0)
@@ -206,16 +228,18 @@ def _read_candidate(image, nominals, detect=True):
         result, _ = _engine()(image, use_det=False, use_cls=False, use_rec=True)
         tokens = []
         for item in result or []:
-            if not item or len(item) < 2:
+            parsed = _text_confidence(item)
+            if not parsed:
                 continue
+            text, confidence = parsed
             tokens.append(
                 {
                     "box": _box_metrics(
                         [[0, 0], [image.shape[1], 0],
                          [image.shape[1], image.shape[0]], [0, image.shape[0]]]
                     ),
-                    "text": str(item[0]),
-                    "confidence": float(item[1]),
+                    "text": text,
+                    "confidence": confidence,
                 }
             )
     return choose_candidate(tokens, nominals, image.shape[0], image.shape[1])

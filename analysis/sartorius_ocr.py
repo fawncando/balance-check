@@ -16,7 +16,13 @@ def _threshold(gray, threshold_type, threshold_value):
     )[1]
 
 
-def digit_boxes(gray, light_digits=False, threshold_value=0):
+def digit_boxes(
+    gray,
+    light_digits=False,
+    threshold_value=0,
+    min_x=30,
+    max_x=340,
+):
     blur = cv2.GaussianBlur(gray, (3, 3), 0)
     threshold_type = (
         cv2.THRESH_BINARY if light_digits
@@ -36,7 +42,7 @@ def digit_boxes(gray, light_digits=False, threshold_value=0):
         if 4 <= w <= 40
         and 8 <= h <= 55
         and area >= 25
-        and 30 < x < 340
+        and min_x < x < max_x
     ]
     whole = [comp for comp in comps if comp["h"] >= 30]
     halves = [

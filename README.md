@@ -23,7 +23,7 @@ balance-check/
 - JDK 17 及以上（本机验证使用 JDK 25）
 - MySQL 8.0
 - Node.js 20 及以上（本机验证使用 Node 25）
-- Python 3.11 及以上（识别原型使用项目内 `.venv`）
+- Python 3.11-3.12（推荐并验证 3.12；识别使用项目内 `.venv`）
 - ffmpeg（视频抽帧必需；Windows 推荐执行 `pwsh -File scripts\install-ffmpeg.ps1` 安装到 `D:\develop\ffmpeg`）
 - ffprobe（上传时验证真实视频流；与 ffmpeg 安装在同一目录）
 - 视频存储默认在 `D:/develop/balance-check-data/uploads`，可用 `APP_UPLOAD_DIR` 覆盖
@@ -86,7 +86,10 @@ python -m venv .venv
 | lier | 李二 | 检验人员 | 部署密钥 |
 | qiyi | 齐一 | 复核确认人员 | 部署密钥 |
 
-测试脚本会自动读取仓库根的 `.local/runtime.env.ps1`（已加入 .gitignore）中的 `BALANCE_DEMO_PASSWORD`，也可直接设置同名环境变量。
+测试、环境检查、打包与后端启动脚本会自动读取仓库根的 `.local/runtime.env.ps1`
+（已加入 .gitignore）。该文件至少应配置 `BALANCE_DEMO_PASSWORD`，本机还可配置
+`JAVA_HOME`、`MAVEN_REPO_LOCAL`、`APP_RECOGNITION_PYTHON`、
+`APP_RECOGNITION_FFMPEG` 与 `APP_RECOGNITION_FFPROBE`。
 
 ## 六、已实现功能
 
@@ -162,7 +165,8 @@ python -m venv .venv
 - 输出整体/单次置信度与异常帧数；低于阈值或异常帧过多时标记“需重点复核”
 - 自动识别 g/mg、小数点、量程、视频时间点，并生成九次称量草稿
 - 草稿关联原视频，检验人员确认清洁、水平调节与内部校正信息后可提交复核
-- 三段样本视频已通过真实后端接口完成端到端测试，均生成 9 条称量并判定通过
+- 四组金标准样本（F001、F002 原机位、F002 新机位两段）已全部通过整片回归；真实后端
+  上传、异步识别和建单链路验证通过
 
 ## 七、接口一览
 
@@ -216,9 +220,9 @@ pwsh -File scripts\batch7-unit-check.ps1   # 天平清单与局域网地址（13
 pwsh -File scripts\user-card-test.ps1      # 人员卡权限、唯一性、二维码、解绑与审计（12 项）
 pwsh -File scripts\user-management-test.ps1 # 人员新增、角色、密码、会话失效、删除与审计（32 项）
 analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
-                                           # 小数点、g/mg、设备档案、人员 QR、手机入口 QR 与通用 OCR（16 项）
+                                           # 小数点、g/mg、设备档案、人员 QR、手机入口 QR 与通用 OCR（19 项）
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
-                                           # 三段样本视频识别回归（3 个用例）
+                                           # 样本视频识别回归（4 个用例）
 node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs frontend/src/utils/device.test.mjs
                                           # 前端换算、复核/作废状态与移动端/角色路由（19 项）
 ```

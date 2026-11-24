@@ -13,6 +13,16 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
+$runtimeEnv = Join-Path $repo '.local\runtime.env.ps1'
+if (Test-Path -LiteralPath $runtimeEnv) {
+    . $runtimeEnv
+}
+if (-not $JavaHome -and $env:JAVA_HOME) {
+    $JavaHome = $env:JAVA_HOME
+}
+if (-not $MavenRepo -and $env:MAVEN_REPO_LOCAL) {
+    $MavenRepo = $env:MAVEN_REPO_LOCAL
+}
 if (-not $OutputRoot) { $OutputRoot = Join-Path $repo 'dist' }
 if (-not $MavenRepo -and (Test-Path 'D:\develop\m2repo')) {
     $MavenRepo = 'D:\develop\m2repo'

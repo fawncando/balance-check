@@ -35,9 +35,9 @@
     "template": "f002c_sartorius.npz",
     "nominals": [100, 20, 2],
     "decoder": "sartorius_auto",
-    "display_roi": [0, 590, 440, 180],
-    "native_ocr": true,
-    "native_ocr_roi": [50, 600, 428, 125],
+    "display_roi": [0, 580, 440, 180],
+    "digit_min_x": 0,
+    "digit_max_x": 350,
     "display_name": "F002 Sartorius, new fixed camera, g/mg display"
   },
   "f003": {

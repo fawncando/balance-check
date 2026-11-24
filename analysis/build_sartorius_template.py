@@ -33,6 +33,8 @@ def main():
     )
     parser.add_argument("--roi", default="16,550,400,180")
     parser.add_argument("--threshold", type=int, default=220)
+    parser.add_argument("--min-x", type=int, default=30)
+    parser.add_argument("--max-x", type=int, default=340)
     parser.add_argument("--dark-digits", action="store_true")
     parser.add_argument("--base-template")
     args = parser.parse_args()
@@ -54,6 +56,8 @@ def main():
             panel,
             light_digits=light_digits,
             threshold_value=args.threshold,
+            min_x=args.min_x,
+            max_x=args.max_x,
         )
         if len(boxes) != len(reading):
             raise RuntimeError(

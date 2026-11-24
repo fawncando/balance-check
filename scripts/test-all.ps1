@@ -16,6 +16,12 @@ $runtimeEnv = Join-Path $repo '.local\runtime.env.ps1'
 if (Test-Path -LiteralPath $runtimeEnv) {
     . $runtimeEnv
 }
+if (-not $JavaHome -and $env:JAVA_HOME) {
+    $JavaHome = $env:JAVA_HOME
+}
+if (-not $MavenRepo -and $env:MAVEN_REPO_LOCAL) {
+    $MavenRepo = $env:MAVEN_REPO_LOCAL
+}
 if (-not $MavenRepo -and (Test-Path 'D:\develop\m2repo')) {
     $MavenRepo = 'D:\develop\m2repo'
 }

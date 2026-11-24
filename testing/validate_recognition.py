@@ -1,4 +1,4 @@
-"""Run the three sample-video recognition cases and compare to known results."""
+"""Run the four sample-video recognition cases and compare to known results."""
 
 import argparse
 import os

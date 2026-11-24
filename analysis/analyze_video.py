@@ -244,7 +244,13 @@ def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI, nominals=None)
 
     light_digits = bool(config.get("light_digits", False))
     threshold_value = int(config.get("threshold_value", 0))
-    boxes = sartorius.digit_boxes(panel, light_digits, threshold_value)
+    boxes = sartorius.digit_boxes(
+        panel,
+        light_digits,
+        threshold_value,
+        int(config.get("digit_min_x", 30)),
+        int(config.get("digit_max_x", 340)),
+    )
     text = ""
     confidences = []
     for box in boxes:

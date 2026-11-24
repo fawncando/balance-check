@@ -92,7 +92,7 @@ python analyze_video.py `
 
 ## 六、已验证样本
 
-三条样本视频均输出九次读数并判定 PASS：
+原有三组样本视频均输出九次读数并判定 PASS：
 
 - Balance_2：200.0009/200.0000/200.0009、
   50.0003/50.0002/50.0003、10.0001×3
@@ -106,13 +106,17 @@ python analyze_video.py `
 - 49.9984/49.9985/49.9984 g
 - 9.9997/9.9997/9.9998 g
 
+F002 新机位样本 `VID_20261124_155020.mp4` 使用 `f002c` 专用模板重新标定后，九次
+读数稳定为 `100.0573×3 / 20.00015 / 20.00015 / 20.00013 /
+2.01486 / 2.01473 / 2.01470 g`，因 100 g 与 2 g 阶段真实超差而判定 `FAIL`。
+
 单元测试：
 
 ```powershell
 python -m unittest discover -s analysis -p "test_*.py" -v
 ```
 
-三段视频回归测试：
+四组金标准视频回归测试：
 
 ```powershell
 python testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
@@ -120,6 +124,7 @@ python testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\f
 
 ## 七、限制
 
-- 当前覆盖 F001、F002 的三段固定机位样本和一条 F003 手机样本，新增机位仍需要重新标定模板。
+- 当前覆盖 F001、F002 原机位、F002 新机位和 F003 手机样本；新增机位仍需要重新标定模板。
 - 人员二维码/人员卡识别已实现，识别结果由后端与登录账号卡号比对。
-- 后端当前以本机进程同步调用识别入口；多人并发场景建议改为任务队列。
+- 后端通过本机 Python 子进程异步执行识别；已通过 3 路识别和 6 路提交/复核并发测试，
+  但 Session 仍为单实例内存存储，多实例部署需要共享会话。

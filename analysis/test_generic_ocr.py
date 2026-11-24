@@ -7,7 +7,7 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from generic_ocr import _box_metrics, choose_candidate  # noqa: E402
+from generic_ocr import _box_metrics, _text_confidence, _tokens, choose_candidate  # noqa: E402
 
 
 def token(box, text, confidence=0.95):
@@ -19,6 +19,28 @@ def token(box, text, confidence=0.95):
 
 
 class GenericOcrTest(unittest.TestCase):
+    def test_parses_rapidocr_123_result_layout(self):
+        item = [
+            [[60.0, 0.0], [236.0, 0.0], [236.0, 54.0], [60.0, 54.0]],
+            "100.05",
+            "0.8439119117600578",
+        ]
+        self.assertEqual(_text_confidence(item), ("100.05", 0.8439119117600578))
+
+    def test_parses_text_confidence_layout(self):
+        self.assertEqual(_text_confidence(("20.00025", "0.9")), ("20.00025", 0.9))
+
+    def test_token_conversion_keeps_rapidocr_123_box(self):
+        tokens = _tokens([
+            [
+                [[60.0, 0.0], [236.0, 0.0], [236.0, 54.0], [60.0, 54.0]],
+                "100.05",
+                "0.8439119117600578",
+            ]
+        ])
+        self.assertEqual(tokens[0]["text"], "100.05")
+        self.assertAlmostEqual(tokens[0]["box"]["width"], 176.0)
+
     def test_selects_large_central_reading(self):
         tokens = [
             token([[610, 660], [650, 660], [650, 682], [610, 682]], "2026-09-26"),

@@ -29,7 +29,9 @@ INSERT IGNORE INTO balance (code, unique_no, department, range_count, internal_c
 VALUES
 ('F001', 'DZTP170911C', '化学室', 1, '手动', 'g'),
 ('F002', 'SJS2605002', '化学室', 2, '手动', 'g'),
-('F003', 'DZTP131209A', '江苏省食品药品检验所', 1, '手动', 'g');
+('F003', 'DZTP131209A', '江苏省食品药品检验所', 1, '手动', 'g'),
+('F004', '待补充-SARTORIUS-01', '江苏省食品药品检验所', 1, '手动', 'g'),
+('F005', 'DZTP231063', '江苏省食品药品检验所', 1, '手动', 'g');
 
 INSERT IGNORE INTO balance_range (balance_id, seq_no, max_capacity_g, division_mg, weight_set_id)
 SELECT b.id, 1, 220.000000, 0.100000, w.id
@@ -40,6 +42,16 @@ INSERT IGNORE INTO balance_range (balance_id, seq_no, max_capacity_g, division_m
 SELECT b.id, 1, 220.000000, 0.100000, w.id
 FROM balance b JOIN weight_set w ON w.set_no = 'FM2512920'
 WHERE b.code = 'F003';
+
+INSERT IGNORE INTO balance_range (balance_id, seq_no, max_capacity_g, division_mg, weight_set_id)
+SELECT b.id, 1, 120.000000, 0.010000, w.id
+FROM balance b JOIN weight_set w ON w.set_no = 'FM2512921'
+WHERE b.code = 'F004';
+
+INSERT IGNORE INTO balance_range (balance_id, seq_no, max_capacity_g, division_mg, weight_set_id)
+SELECT b.id, 1, 220.000000, 0.100000, w.id
+FROM balance b JOIN weight_set w ON w.set_no = 'FM2512920'
+WHERE b.code = 'F005';
 
 INSERT IGNORE INTO balance_range (balance_id, seq_no, max_capacity_g, division_mg, weight_set_id)
 SELECT b.id, 1, 120.000000, 0.100000, w.id

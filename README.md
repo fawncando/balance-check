@@ -86,6 +86,8 @@ python -m venv .venv
 | lier | 李二 | 检验人员 | 部署密钥 |
 | qiyi | 齐一 | 复核确认人员 | 部署密钥 |
 
+测试脚本会自动读取仓库根的 `.local/runtime.env.ps1`（已加入 .gitignore）中的 `BALANCE_DEMO_PASSWORD`，也可直接设置同名环境变量。
+
 ## 六、已实现功能
 
 ### 6.1 账号与权限（批次 3）
@@ -214,7 +216,7 @@ pwsh -File scripts\batch7-unit-check.ps1   # 天平清单与局域网地址（13
 pwsh -File scripts\user-card-test.ps1      # 人员卡权限、唯一性、二维码、解绑与审计（12 项）
 pwsh -File scripts\user-management-test.ps1 # 人员新增、角色、密码、会话失效、删除与审计（32 项）
 analysis\.venv\Scripts\python.exe -m unittest discover -s analysis -p "test_*.py" -v
-                                           # 小数点、g/mg、设备档案、人员 QR 与手机入口 QR（8 项）
+                                           # 小数点、g/mg、设备档案、人员 QR、手机入口 QR 与通用 OCR（16 项）
 analysis\.venv\Scripts\python.exe testing\validate_recognition.py --video-dir D:\videos --ffmpeg D:\tools\ffmpeg.exe
                                            # 三段样本视频识别回归（3 个用例）
 node --test frontend/src/utils/judgement.test.mjs frontend/src/utils/review.test.mjs frontend/src/utils/device.test.mjs

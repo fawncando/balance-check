@@ -26,10 +26,11 @@ python analyze_video.py `
   --out result.json
 ```
 
-六套显示档案：
+七套显示档案：
 
 | profile | 设备 | 显示类型 |
 | --- | --- | --- |
+| generic | 未知普通图形屏设备 | RapidOCR 通用文字识别，按数据库砝码校验 |
 | f001 | F001（220 g，200/50/10 g） | Mettler Toledo 图形屏 |
 | f001_mg | F001（同上，显示单位为 mg） | Mettler Toledo 图形屏低机位 |
 | f002a | F002（120 g 量程，100 g；40 g 量程，20/2 g） | Sartorius 七段屏，显示 g |
@@ -47,6 +48,10 @@ python analyze_video.py `
 
 黑底白字等不同极性和固定区域可通过档案中的 `light_digits`、`threshold_value`
 与 `display_roi` 配置。`build_sartorius_template.py` 可用已标注读数的截图生成模板。
+
+`generic` 档案使用 RapidOCR + ONNX Runtime 对完整画面做文字检测，自动尝试
+0°、90°、180°、270° 方向，过滤日期、菜单、百分比和最大值等次要数字，并用后端传入的
+标准砝码数值判断主读数及 `g/mg`。七段数码管仍优先使用专用模板，精度和速度更高。
 
 ## 三、小数点与单位规则
 

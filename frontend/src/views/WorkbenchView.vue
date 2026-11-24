@@ -5,6 +5,7 @@ import { UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import http from '../api/http'
 import { auth } from '../stores/auth'
+import { MAX_VIDEO_BYTES, MAX_VIDEO_LABEL } from '../config/upload'
 
 const router = useRouter()
 const balances = ref([])
@@ -137,8 +138,8 @@ function onFileChange(uploadFile) {
     ElMessage.error('仅支持 mp4、mov、m4v、avi、mkv 格式')
     return
   }
-  if (raw.size > 500 * 1024 * 1024) {
-    ElMessage.error('单个视频不能超过 500MB')
+  if (raw.size > MAX_VIDEO_BYTES) {
+    ElMessage.error(`单个视频不能超过 ${MAX_VIDEO_LABEL}`)
     return
   }
   selectedFile.value = raw
@@ -320,7 +321,7 @@ function timePart(value) {
         <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
         <div class="el-upload__text">把校验视频拖到此处，或<em>点击选择文件</em></div>
         <template #tip>
-          <div class="el-upload__tip">支持 mp4、mov、m4v、avi、mkv，单个文件不超过 500MB</div>
+          <div class="el-upload__tip">支持 mp4、mov、m4v、avi、mkv，单个文件不超过 {{ MAX_VIDEO_LABEL }}</div>
         </template>
       </el-upload>
 

@@ -64,7 +64,7 @@ class SartoriusValueTest(unittest.TestCase):
     def test_profiles_are_data_driven(self):
         self.assertEqual(
             set(PROFILES),
-            {"f001", "f001_mg", "f002a", "f002b", "f002c", "f003"},
+            {"generic", "f001", "f001_mg", "f002a", "f002b", "f002c", "f003"},
         )
         self.assertEqual(PROFILES["f002b"]["decoder"], "sartorius_mixed")
         self.assertEqual(PROFILES["f002c"]["decoder"], "sartorius_auto")

@@ -135,7 +135,13 @@ public class VideoRecognitionService {
             Video video = videoMapper.findById(videoId);
             Balance balance = balanceMapper.findById(video.getBalanceId());
             Path videoPath = uploadRoot.resolve(video.getRelativePath()).normalize();
-            RecognitionResult best = recognizeBest(videoPath, balance.getCode());
+            BalanceView balanceView = balanceService.get(balance.getId());
+            List<java.math.BigDecimal> nominals = balanceView.getRanges().stream()
+                    .flatMap(range -> range.getWeights().stream())
+                    .distinct()
+                    .sorted()
+                    .toList();
+            RecognitionResult best = recognizeBest(videoPath, balance.getCode(), nominals);
             int found = best == null || best.getWeighings() == null
                     ? 0 : best.getWeighings().size();
             if (found != 9) {
@@ -183,18 +189,25 @@ public class VideoRecognitionService {
         }
     }
 
-    private RecognitionResult recognizeBest(Path videoPath, String balanceCode) {
-        List<String> profiles = recognitionProperties.getDeviceProfiles()
+    private RecognitionResult recognizeBest(Path videoPath, String balanceCode,
+                                            List<java.math.BigDecimal> nominals) {
+        List<String> configured = recognitionProperties.getDeviceProfiles()
                 .get(balanceCode.toUpperCase(java.util.Locale.ROOT));
+        String generic = recognitionProperties.getGenericProfile();
+        List<String> profiles = configured == null
+                ? new ArrayList<>() : new ArrayList<>(configured);
         if (profiles == null || profiles.isEmpty()) {
-            throw new BizException("暂不支持天平型号 " + balanceCode);
+            if (generic == null || generic.isBlank()) {
+                throw new BizException("暂不支持天平型号 " + balanceCode);
+            }
+            profiles.add(generic);
         }
 
         List<RecognitionResult> candidates = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         for (String profile : profiles) {
             try {
-                candidates.add(recognitionProcessService.run(videoPath, profile));
+                candidates.add(recognitionProcessService.run(videoPath, profile, nominals));
             } catch (RuntimeException ex) {
                 String safeMessage = ex instanceof BizException && ex.getMessage() != null
                         && !ex.getMessage().isBlank()
@@ -203,19 +216,38 @@ public class VideoRecognitionService {
                 errors.add(safeMessage);
             }
         }
-        RecognitionResult best = candidates.stream()
-                .min(Comparator
-                        .comparingInt(this::readingCount).reversed()
-                        .thenComparingInt(this::displayUnitPenalty)
-                        .thenComparingDouble(this::fitPenalty)
-                        .thenComparing(RecognitionResult::getProfile))
-                .orElse(null);
+        RecognitionResult specificBest = best(candidates);
+        if (generic != null && !generic.isBlank()
+                && !profiles.contains(generic)
+                && readingCount(specificBest) < 9) {
+            try {
+                RecognitionResult genericResult =
+                        recognitionProcessService.run(videoPath, generic, nominals);
+                candidates.add(genericResult);
+            } catch (RuntimeException ex) {
+                log.warn("通用识别档案执行失败：{}", ex.toString());
+                errors.add(ex instanceof BizException && ex.getMessage() != null
+                        && !ex.getMessage().isBlank()
+                        ? ex.getMessage() : RecognitionMessages.UNEXPECTED_FAILURE);
+            }
+        }
+        RecognitionResult best = best(candidates);
         if (best == null) {
             log.error("所有识别档案均失败：video={}，errors={}", videoPath, errors);
             throw new BizException(errors.isEmpty()
                     ? RecognitionMessages.ALL_PROFILES_FAILED : errors.get(0));
         }
         return best;
+    }
+
+    private RecognitionResult best(List<RecognitionResult> candidates) {
+        return candidates.stream()
+                .min(Comparator
+                        .comparingInt(this::readingCount).reversed()
+                        .thenComparingInt(this::displayUnitPenalty)
+                        .thenComparingDouble(this::fitPenalty)
+                        .thenComparing(RecognitionResult::getProfile))
+                .orElse(null);
     }
 
     private CalibrationDtos.RecordView createDraft(Video video,

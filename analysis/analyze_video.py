@@ -24,6 +24,7 @@ sys.path.insert(0, HERE)
 
 import mettler_ocr as mettler  # noqa: E402
 import sartorius_ocr as sartorius  # noqa: E402
+import generic_ocr  # noqa: E402
 
 PROFILE_FILE = os.path.join(HERE, "profiles.json")
 DISPLAY_ROI = (80, 590, 400, 180)
@@ -40,6 +41,8 @@ PROFILES = load_profiles()
 
 def load_templates(profile):
     config = PROFILES[profile]
+    if "template" not in config:
+        return {}, config
     data = np.load(os.path.join(HERE, "templates", config["template"]))
     return {key: data[key] for key in data.files}, config
 
@@ -207,18 +210,20 @@ def classify_glyph(glyph, templates):
     return best, confidence
 
 
-def decode_frame(path, profile, templates, roi=DISPLAY_ROI):
+def decode_frame(path, profile, templates, roi=DISPLAY_ROI, nominals=None):
     frame = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     if frame is None:
         return None, 0.0, None
-    return decode_gray_frame(frame, profile, templates, roi)
+    return decode_gray_frame(frame, profile, templates, roi, nominals)
 
 
-def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI):
+def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI, nominals=None):
+    config = PROFILES[profile]
+    if config["decoder"] == "generic":
+        return generic_ocr.read_gray_frame(frame, nominals or config["nominals"])
     panel = display_panel(frame, roi)
     if panel is None or panel.size == 0:
         return None, 0.0, None
-    config = PROFILES[profile]
     if config["decoder"] == "mettler":
         text, confidence = mettler.read_panel(panel, templates)
         try:
@@ -339,10 +344,12 @@ def nominal_of(value, nominals):
     return min(nominals, key=lambda nominal: abs(nominal - value))
 
 
-def decode_values(frames, profile, templates, roi=DISPLAY_ROI):
+def decode_values(frames, profile, templates, roi=DISPLAY_ROI, nominals=None):
     decoded = []
     for second, path in enumerate(frames, 1):
-        value, confidence, unit = decode_frame(path, profile, templates, roi)
+        value, confidence, unit = decode_frame(
+            path, profile, templates, roi, nominals
+        )
         decoded.append((second, value, confidence, unit))
     return decoded
 
@@ -429,27 +436,34 @@ def collect_weighings(values, nominals):
     return weighings
 
 
-def analyze(video, profile, ffmpeg, out_path=None, min_confidence=55.0):
+def analyze(video, profile, ffmpeg, out_path=None, min_confidence=55.0,
+            nominals=None):
     if profile not in PROFILES:
         raise ValueError(f"unknown profile: {profile}")
     if not os.path.isfile(video):
         raise FileNotFoundError(video)
 
     templates, config = load_templates(profile)
+    effective_nominals = list(nominals or config["nominals"])
     with tempfile.TemporaryDirectory(prefix="bc-rec-") as tmp:
         frames = extract_frames(video, tmp, ffmpeg)
         display_roi = tuple(config.get("display_roi", DISPLAY_ROI))
-        values = decode_values(frames, profile, templates, display_roi)
-        weighings = collect_weighings(values, config["nominals"])
+        if config["decoder"] == "generic":
+            values = generic_ocr.read_frames(frames, effective_nominals)
+        else:
+            values = decode_values(
+                frames, profile, templates, display_roi, effective_nominals
+            )
+        weighings = collect_weighings(values, effective_nominals)
         adaptive_roi_used = False
-        if len(weighings) < 9:
+        if len(weighings) < 9 and config["decoder"] != "generic":
             adaptive_roi = find_display_roi(frames, profile, templates)
             if adaptive_roi:
                 adaptive_values = decode_values(
                     frames, profile, templates, adaptive_roi
                 )
                 adaptive_weighings = collect_weighings(
-                    adaptive_values, config["nominals"]
+                    adaptive_values, effective_nominals
                 )
                 if len(adaptive_weighings) > len(weighings):
                     values = adaptive_values
@@ -505,13 +519,21 @@ def main():
     parser.add_argument("--out")
     parser.add_argument("--ffmpeg", default=os.environ.get("FFMPEG", "ffmpeg"))
     parser.add_argument("--min-confidence", type=float, default=55.0)
+    parser.add_argument(
+        "--nominals",
+        help="comma-separated nominal weights in grams for generic OCR",
+    )
     args = parser.parse_args()
+    nominals = None
+    if args.nominals:
+        nominals = [float(value) for value in args.nominals.split(",") if value]
     result = analyze(
         args.video,
         args.profile,
         args.ffmpeg,
         args.out,
         args.min_confidence,
+        nominals,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

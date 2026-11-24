@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleSize(MaxUploadSizeExceededException ex) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(ApiResponse.error(413, "文件超过 500MB 限制"));
+                .body(ApiResponse.error(413, "文件超过上传大小限制"));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

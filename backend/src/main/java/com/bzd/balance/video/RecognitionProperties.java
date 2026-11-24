@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class RecognitionProperties {
 
     private Map<String, List<String>> deviceProfiles = new LinkedHashMap<>();
+    private String genericProfile = "generic";
 
     public Map<String, List<String>> getDeviceProfiles() {
         return deviceProfiles;
@@ -19,5 +20,13 @@ public class RecognitionProperties {
 
     public void setDeviceProfiles(Map<String, List<String>> deviceProfiles) {
         this.deviceProfiles = deviceProfiles;
+    }
+
+    public String getGenericProfile() {
+        return genericProfile;
+    }
+
+    public void setGenericProfile(String genericProfile) {
+        this.genericProfile = genericProfile;
     }
 }

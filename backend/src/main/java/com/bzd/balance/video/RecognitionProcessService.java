@@ -1,6 +1,7 @@
 package com.bzd.balance.video;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -43,7 +44,8 @@ public class RecognitionProcessService {
         this.timeoutSeconds = timeoutSeconds;
     }
 
-    public RecognitionResult run(Path videoPath, String profile) {
+    public RecognitionResult run(Path videoPath, String profile,
+                                 List<BigDecimal> nominals) {
         Path resultFile = null;
         Path logFile = null;
         try {
@@ -60,6 +62,13 @@ public class RecognitionProcessService {
             command.add(resolveExecutable(configuredFfmpeg));
             command.add("--out");
             command.add(resultFile.toString());
+            if (nominals != null && !nominals.isEmpty()) {
+                command.add("--nominals");
+                command.add(nominals.stream()
+                        .map(BigDecimal::stripTrailingZeros)
+                        .map(BigDecimal::toPlainString)
+                        .collect(java.util.stream.Collectors.joining(",")));
+            }
 
             ProcessBuilder builder = new ProcessBuilder(command)
                     .redirectErrorStream(true)

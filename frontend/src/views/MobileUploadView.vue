@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CameraFilled, SwitchButton } from '@element-plus/icons-vue'
 import http from '../api/http'
+import { MAX_VIDEO_BYTES, MAX_VIDEO_LABEL } from '../config/upload'
 import { auth, logout } from '../stores/auth'
 
 const balances = ref([])
@@ -52,8 +53,8 @@ function chooseFile(event) {
     ElMessage.error('仅支持 mp4、mov、m4v、avi、mkv')
     return
   }
-  if (file.size > 500 * 1024 * 1024) {
-    ElMessage.error('视频不能超过 500MB')
+  if (file.size > MAX_VIDEO_BYTES) {
+    ElMessage.error(`视频不能超过 ${MAX_VIDEO_LABEL}`)
     return
   }
   selectedFile.value = file

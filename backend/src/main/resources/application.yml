@@ -22,8 +22,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   servlet:
     multipart:
-      max-file-size: ${UPLOAD_MAX_FILE:500MB}
-      max-request-size: ${UPLOAD_MAX_REQUEST:520MB}
+      max-file-size: ${UPLOAD_MAX_FILE:1GB}
+      max-request-size: ${UPLOAD_MAX_REQUEST:1100MB}
 
 mybatis:
   configuration:
@@ -52,6 +52,7 @@ app:
     ffprobe-command: ${APP_RECOGNITION_FFPROBE:ffprobe}
     timeout-seconds: ${APP_RECOGNITION_TIMEOUT:600}
     qr-script: ${APP_RECOGNITION_QR_SCRIPT:../analysis/generate_qr.py}
+    generic-profile: ${APP_RECOGNITION_GENERIC_PROFILE:generic}
     device-profiles:
       F001:
         - f001

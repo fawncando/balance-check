@@ -90,7 +90,7 @@ if ($env:APP_RECOGNITION_PYTHON -and (Test-Path $env:APP_RECOGNITION_PYTHON)) {
 }
 if ($python) {
     $pythonVersion = ((& $python --version 2>&1) | Out-String).Trim()
-    $deps = ((& $python -c "import cv2,numpy; print('cv2',cv2.__version__,'numpy',numpy.__version__)" 2>&1) | Out-String).Trim()
+    $deps = ((& $python -c "import cv2,numpy,rapidocr_onnxruntime,onnxruntime,importlib.metadata as m; print('cv2',cv2.__version__,'numpy',numpy.__version__,'rapidocr',m.version('rapidocr_onnxruntime'),'onnxruntime',onnxruntime.__version__)" 2>&1) | Out-String).Trim()
     if ($LASTEXITCODE -eq 0) {
         Report 'PASS' 'Python 识别依赖' ("{0}; {1}" -f $pythonVersion, $deps)
     } else {

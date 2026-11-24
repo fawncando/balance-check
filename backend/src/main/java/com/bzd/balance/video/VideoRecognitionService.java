@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,8 @@ import com.bzd.balance.user.UserMapper;
 
 @Service
 public class VideoRecognitionService {
+
+    private static final Logger log = LoggerFactory.getLogger(VideoRecognitionService.class);
 
     private static final BigDecimal LIMIT_RATE = new BigDecimal("0.0005");
 
@@ -123,9 +127,10 @@ public class VideoRecognitionService {
             Balance balance = balanceMapper.findById(video.getBalanceId());
             Path videoPath = uploadRoot.resolve(video.getRelativePath()).normalize();
             RecognitionResult best = recognizeBest(videoPath, balance.getCode());
-            if (best == null || best.getWeighings() == null
-                    || best.getWeighings().size() != 9) {
-                throw new BizException("未识别出完整的九次称量，请检查视频与天平选择");
+            int found = best == null || best.getWeighings() == null
+                    ? 0 : best.getWeighings().size();
+            if (found != 9) {
+                throw new BizException(RecognitionMessages.incompleteWeighings(found, 9));
             }
 
             String card = best.getPersonCard();
@@ -134,8 +139,7 @@ public class VideoRecognitionService {
             boolean identityVerified = card != null && expectedCard != null
                     && card.equalsIgnoreCase(expectedCard);
             if (card != null && !identityVerified) {
-                throw new BizException("人员卡号 " + card + " 与当前登录账号 "
-                        + expectedCard + " 不一致");
+                throw new BizException(RecognitionMessages.cardMismatch(card, expectedCard));
             }
 
             CalibrationDtos.RecordView record = createDraft(
@@ -155,7 +159,11 @@ public class VideoRecognitionService {
                     String.valueOf(videoId),
                     best.getProfile() + " -> " + record.getRecordNo(), ip);
         } catch (RuntimeException ex) {
-            String message = limit(ex.getMessage() == null ? "识别失败" : ex.getMessage(), 500);
+            log.error("视频 {} 识别失败", videoId, ex);
+            String message = ex instanceof BizException && ex.getMessage() != null
+                    && !ex.getMessage().isBlank()
+                            ? limit(ex.getMessage(), 500)
+                            : RecognitionMessages.UNEXPECTED_FAILURE;
             videoMapper.updateStatus(videoId, "FAILED", message);
             auditService.log(user.getId(), "VIDEO_ANALYZE_FAILED", "VIDEO",
                     String.valueOf(videoId), message, ip);
@@ -175,7 +183,11 @@ public class VideoRecognitionService {
             try {
                 candidates.add(recognitionProcessService.run(videoPath, profile));
             } catch (RuntimeException ex) {
-                errors.add(profile + "：" + ex.getMessage());
+                String safeMessage = ex instanceof BizException && ex.getMessage() != null
+                        && !ex.getMessage().isBlank()
+                                ? ex.getMessage() : RecognitionMessages.UNEXPECTED_FAILURE;
+                log.warn("识别档案 {} 执行失败：{}", profile, ex.toString());
+                errors.add(safeMessage);
             }
         }
         RecognitionResult best = candidates.stream()
@@ -185,8 +197,10 @@ public class VideoRecognitionService {
                         .thenComparingDouble(this::fitPenalty)
                         .thenComparing(RecognitionResult::getProfile))
                 .orElse(null);
-        if (best == null && !errors.isEmpty()) {
-            throw new BizException("视频识别失败：" + String.join("；", errors));
+        if (best == null) {
+            log.error("所有识别档案均失败：video={}，errors={}", videoPath, errors);
+            throw new BizException(errors.isEmpty()
+                    ? RecognitionMessages.ALL_PROFILES_FAILED : errors.get(0));
         }
         return best;
     }

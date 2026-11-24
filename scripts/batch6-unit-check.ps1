@@ -53,6 +53,8 @@ $compileOutput = & $javac -encoding UTF-8 -cp $classJar -d $out (Join-Path $repo
 if ($LASTEXITCODE -ne 0) { $compileOutput | Write-Host; exit $LASTEXITCODE }
 $compileOutput = & $javac -encoding UTF-8 -cp "$classJar;$out" -d $out (Join-Path $repo 'scripts\RecordSheetCheck.java') 2>&1
 if ($LASTEXITCODE -ne 0) { $compileOutput | Write-Host; exit $LASTEXITCODE }
+$compileOutput = & $javac -encoding UTF-8 -cp "$classJar;$out" -d $out (Join-Path $repo 'scripts\RecognitionMessageCheck.java') 2>&1
+if ($LASTEXITCODE -ne 0) { $compileOutput | Write-Host; exit $LASTEXITCODE }
 
 & $java "-Dstdout.encoding=UTF-8" "-Dstderr.encoding=UTF-8" -cp "$classJar;$out" ReviewRulesCheck
 $rulesExit = $LASTEXITCODE
@@ -61,5 +63,9 @@ Write-Host ""
 & $java "-Dstdout.encoding=UTF-8" "-Dstderr.encoding=UTF-8" -cp "$classJar;$out" com.bzd.balance.calibration.RecordSheetCheck
 $sheetExit = $LASTEXITCODE
 
-if ($rulesExit -ne 0 -or $sheetExit -ne 0) { exit 1 }
+Write-Host ""
+& $java "-Dstdout.encoding=UTF-8" "-Dstderr.encoding=UTF-8" -cp "$classJar;$out" RecognitionMessageCheck
+$messageExit = $LASTEXITCODE
+
+if ($rulesExit -ne 0 -or $sheetExit -ne 0 -or $messageExit -ne 0) { exit 1 }
 exit 0

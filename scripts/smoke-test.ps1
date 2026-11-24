@@ -34,6 +34,11 @@ try {
     $storageFields = @($b.data.storage.PSObject.Properties.Name)
     Check '健康检查不暴露服务器路径' ($storageFields -notcontains 'path')
 
+    $r = Invoke-WebRequest "$base/" -SkipHttpErrorCheck
+    Check '根路径返回 404 而非 500' ($r.StatusCode -eq 404) "status=$($r.StatusCode)"
+    $r = Invoke-WebRequest "$base/mobile" -SkipHttpErrorCheck
+    Check '未知页面路径返回 404 而非 500' ($r.StatusCode -eq 404) "status=$($r.StatusCode)"
+
     $r = Invoke-WebRequest "$base/api/videos" -SkipHttpErrorCheck
     Check '未登录访问视频接口返回 401' ($r.StatusCode -eq 401) "status=$($r.StatusCode)"
 
@@ -51,6 +56,10 @@ try {
     $r = Invoke-WebRequest "$base/api/auth/me" -WebSession $web -SkipHttpErrorCheck
     $b = Body $r
     Check '会话保持，当前用户为李一' ($b.data.username -eq 'liyi' -and $b.data.cardNo -eq 'RY-001') "user=$($b.data.username)"
+
+    $r = Invoke-WebRequest "$base/api/not-exists" -WebSession $web -SkipHttpErrorCheck
+    $b = Body $r
+    Check '登录后访问未知接口返回 404' ($r.StatusCode -eq 404 -and $b.message -eq '请求的资源不存在') `n        "status=$($r.StatusCode) message=$($b.message)"
 
     $r = Invoke-WebRequest "$base/api/balances" -WebSession $web -SkipHttpErrorCheck
     $b = Body $r

@@ -8,6 +8,7 @@ import { auth, logout } from '../stores/auth'
 const balances = ref([])
 const balanceId = ref(null)
 const recordedAt = ref(new Date())
+const recordedAtTouched = ref(false)
 const selectedFile = ref(null)
 const uploading = ref(false)
 const progress = ref(0)
@@ -56,10 +57,14 @@ function chooseFile(event) {
     return
   }
   selectedFile.value = file
-  if (Number(file.lastModified) > 0) recordedAt.value = new Date(file.lastModified)
+  if (!recordedAtTouched.value) recordedAt.value = new Date()
   result.value = null
   stage.value = 'idle'
   statusText.value = '视频已选择，可以上传到电脑'
+}
+
+function markRecordedAtTouched() {
+  recordedAtTouched.value = true
 }
 
 async function startUpload() {
@@ -91,6 +96,8 @@ async function startUpload() {
     const analyzed = await waitForAnalysis(uploaded.id)
     result.value = analyzed
     selectedFile.value = null
+    recordedAt.value = new Date()
+    recordedAtTouched.value = false
     if (analyzed.status === 'ANALYZED') {
       stage.value = 'done'
       statusText.value = '识别完成，已生成电脑端校验草稿'
@@ -219,8 +226,10 @@ async function onLogout() {
             format="YYYY-MM-DD HH:mm"
             :clearable="false"
             placeholder="视频实际拍摄时间"
+            @change="markRecordedAtTouched"
             style="width: 100%"
           />
+          <small>默认取当前时间，可手动调整</small>
         </label>
 
         <label class="file-picker">

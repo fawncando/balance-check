@@ -11,6 +11,7 @@ const balances = ref([])
 const videos = ref([])
 const balanceId = ref(null)
 const recordedAt = ref(new Date())
+const recordedAtTouched = ref(false)
 const selectedFile = ref(null)
 const uploading = ref(false)
 const analyzingId = ref(null)
@@ -141,9 +142,13 @@ function onFileChange(uploadFile) {
     return
   }
   selectedFile.value = raw
-  if (Number(raw.lastModified) > 0) {
-    recordedAt.value = new Date(raw.lastModified)
+  if (!recordedAtTouched.value) {
+    recordedAt.value = new Date()
   }
+}
+
+function markRecordedAtTouched() {
+  recordedAtTouched.value = true
 }
 
 async function startUpload() {
@@ -176,6 +181,8 @@ async function startUpload() {
     ElMessage.info('识别任务已提交，正在后台处理')
     const analyzed = await waitForAnalysis(uploaded.id)
     selectedFile.value = null
+    recordedAt.value = new Date()
+    recordedAtTouched.value = false
     progress.value = 0
     await loadVideos()
     if (analyzed.status === 'ANALYZED' && analyzed.calibrationId) {
@@ -296,8 +303,10 @@ function timePart(value) {
           format="YYYY-MM-DD HH:mm"
           :clearable="false"
           placeholder="视频实际拍摄时间"
+          @change="markRecordedAtTouched"
           style="width: 190px"
         />
+        <span class="note">默认取当前时间，可手动调整</span>
       </div>
 
       <el-upload

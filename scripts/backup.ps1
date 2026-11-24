@@ -1,4 +1,4 @@
-# 备份 MySQL 数据库，可选包含上传视频目录。
+﻿# 备份 MySQL 数据库，可选包含上传视频目录。
 # 用法：pwsh -File scripts\backup.ps1 -Password 123456 -IncludeUploads
 param(
     [string]$Server = 'localhost',

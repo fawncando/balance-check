@@ -100,6 +100,20 @@ if ($SkipFrontend) {
     }
 }
 
+Write-Host ""
+Write-Host '== 脚本编码检查 ==' -ForegroundColor Cyan
+$badScripts = @(Get-ChildItem (Join-Path $repo 'scripts') -Filter '*.ps1' | Where-Object {
+    $bytes = [System.IO.File]::ReadAllBytes($_.FullName)
+    -not ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
+})
+if ($badScripts.Count -eq 0) {
+    Write-Host '所有脚本均为 UTF-8 BOM 编码' -ForegroundColor Green
+    Add-Result '脚本编码检查（UTF-8 BOM）' $true ''
+} else {
+    $badScripts | ForEach-Object { Write-Host ('缺少 BOM：' + $_.Name) -ForegroundColor Red }
+    Add-Result '脚本编码检查（UTF-8 BOM）' $false (($badScripts | ForEach-Object { $_.Name }) -join ', ')
+}
+
 $health = $false
 try {
     $response = Invoke-WebRequest "$base/api/system/health" -UseBasicParsing -TimeoutSec 3

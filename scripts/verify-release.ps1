@@ -73,6 +73,13 @@ $scriptDir = Join-Path $root 'scripts'
 $scriptCount = if (Test-Path $scriptDir) { @(Get-ChildItem $scriptDir -Filter '*.ps1').Count } else { 0 }
 Check '运维与测试脚本（至少 5 个）' ($scriptCount -ge 5) ("{0} 个" -f $scriptCount)
 
+$scriptFiles = if (Test-Path $scriptDir) { @(Get-ChildItem $scriptDir -Filter '*.ps1') } else { @() }
+$missingBom = @($scriptFiles | Where-Object {
+    $bytes = [System.IO.File]::ReadAllBytes($_.FullName)
+    -not ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
+})
+Check '脚本统一 UTF-8 BOM 编码（兼容 Windows PowerShell 5.1）' ($missingBom.Count -eq 0) (($missingBom | ForEach-Object { $_.Name }) -join ', ')
+
 if (Test-Path (Join-Path $root 'VERSION.txt')) {
     Write-Host ""
     Write-Host "版本信息：" -ForegroundColor DarkGray

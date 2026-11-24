@@ -1,4 +1,4 @@
-# 安装 Gyan.dev 提供的 Windows ffmpeg 稳定构建，并校验官方 SHA-256。
+﻿# 安装 Gyan.dev 提供的 Windows ffmpeg 稳定构建，并校验官方 SHA-256。
 # 用法：pwsh -File scripts\install-ffmpeg.ps1
 param(
     [string]$InstallRoot = 'D:\develop\ffmpeg',

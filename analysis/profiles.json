@@ -5,6 +5,14 @@
     "decoder": "mettler",
     "display_name": "F001 Mettler graphical display"
   },
+  "f001_mg": {
+    "template": "f001_mg_mettler.npz",
+    "nominals": [200, 50, 10],
+    "decoder": "mettler",
+    "display_roi": [80, 540, 400, 180],
+    "display_unit": "mg",
+    "display_name": "F001 Mettler graphical display in mg"
+  },
   "f002a": {
     "template": "f002a_sartorius.npz",
     "nominals": [100, 20, 2],
@@ -17,5 +25,21 @@
     "decoder": "sartorius_mixed",
     "left_align_x": 70,
     "display_name": "F002 Sartorius, second range in mg"
+  },
+  "f002c": {
+    "template": "f002c_sartorius.npz",
+    "nominals": [100, 20, 2],
+    "decoder": "sartorius_auto",
+    "display_roi": [0, 590, 440, 180],
+    "display_name": "F002 Sartorius, new fixed camera, g/mg display"
+  },
+  "f003": {
+    "template": "f003_sartorius.npz",
+    "nominals": [200, 50, 10],
+    "decoder": "sartorius_g",
+    "display_roi": [16, 550, 400, 180],
+    "light_digits": true,
+    "threshold_value": 220,
+    "display_name": "F003 Sartorius 220 g, white digits on dark display"
   }
 }

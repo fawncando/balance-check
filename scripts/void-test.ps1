@@ -2,6 +2,7 @@
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $base = $BaseUrl.TrimEnd('/')
 $pass = 0
 $fail = 0
@@ -29,9 +30,9 @@ $measurements = @(
     Measurement 1 3 1 10 10.0000;   Measurement 1 3 2 10 10.0001;   Measurement 1 3 3 10 9.9999
 )
 
-$inspector = Login 'liyi' '123456'
-$reviewer = Login 'qiyi' '123456'
-$admin = Login 'admin' '123456'
+$inspector = Login 'liyi' $DemoPassword
+$reviewer = Login 'qiyi' $DemoPassword
+$admin = Login 'admin' $DemoPassword
 
 $body = @{
     balanceId = 1

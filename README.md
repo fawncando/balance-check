@@ -46,7 +46,7 @@ cmd /c "mysql -uroot -p --default-character-set=utf8mb4 < database\schema.sql"
 cmd /c "mysql -uroot -p --default-character-set=utf8mb4 < database\seed.sql"
 ```
 
-数据库连接配置在 `backend/src/main/resources/application.yml`，默认 `root/123456`，库名 `balance_check`。`/api/system/health` 只返回磁盘容量与可写状态，不暴露服务器目录。
+数据库连接配置在 `backend/src/main/resources/application.yml`，运行时必须提供独立的 `DB_USERNAME` / `DB_PASSWORD`，库名 `balance_check`。`/api/system/health` 只返回磁盘容量与可写状态，不暴露服务器目录。
 
 ## 四、启动
 
@@ -54,7 +54,7 @@ cmd /c "mysql -uroot -p --default-character-set=utf8mb4 < database\seed.sql"
 
 ```powershell
 cd backend
-.\mvnw.cmd -o -DskipTests "-Dmaven.repo.local=D:\develop\m2repo" package
+.\mvnw.cmd -DskipTests "-Dmaven.repo.local=D:\develop\m2repo" package
 java -jar target\balance-check-0.1.0-SNAPSHOT.jar
 ```
 
@@ -81,10 +81,10 @@ python -m venv .venv
 
 | 账号 | 姓名 | 角色 | 口令 |
 | --- | --- | --- | --- |
-| admin | 管理员 | 管理员 | 123456 |
-| liyi | 李一 | 检验人员 | 123456 |
-| lier | 李二 | 检验人员 | 123456 |
-| qiyi | 齐一 | 复核确认人员 | 123456 |
+| admin | 管理员 | 管理员 | 部署密钥 |
+| liyi | 李一 | 检验人员 | 部署密钥 |
+| lier | 李二 | 检验人员 | 部署密钥 |
+| qiyi | 齐一 | 复核确认人员 | 部署密钥 |
 
 ## 六、已实现功能
 
@@ -98,7 +98,7 @@ python -m venv .venv
 
 ### 6.3 天平清单（批次 3）
 
-按清单带出科室、唯一号、量程、分度值、砝码组与标准砝码；F001 为 220 g / 0.1 mg（200/50/10 g），F002 为 120 g / 0.1 mg 与 40 g / 0.01 mg（100/20/2 g）。
+按清单带出科室、唯一号、量程、分度值、砝码组与标准砝码；F001 为 220 g / 0.1 mg（200/50/10 g，支持 g/mg 显示），F002 为 120 g / 0.1 mg 与 40 g / 0.01 mg（100/20/2 g，兼容原机位和新机位），F003 为 220 g / 0.1 mg（200/50/10 g，黑底白字）。
 
 ### 6.4 记录与判定（批次 5）
 
@@ -151,7 +151,7 @@ python -m venv .venv
 - 从检验工作台提交复核后自动返回工作台；记录查询和复核台进入详情后会返回原页面
 - 后端重启时将遗留的 `ANALYZING` 任务标记为失败，可重新识别
 - 手工补录必须填写原因，备注和审计日志保留补录说明
-- F001 使用 Mettler 图形屏模板；F002 自动比较 `f002a` 与 `f002b` 两套显示档案，选择九次有效读数更多的结果
+- F001 自动比较 `f001` 与 `f001_mg`；F002 自动比较 `f002a`、`f002b` 与 `f002c`；F003 使用 `f003`，选择九次有效读数更多的结果
 - F002 读数数量相同时优先保留检测到 `mg` 的档案，示值单位与换算值分别保存
 - 手机不同录制分辨率会先归一化到模板基准 `544×960`，再裁剪显示屏区域
 - 固定区域不足九次时自动搜索显示屏位置和缩放比例，原有样例仍优先走固定标定
@@ -204,7 +204,7 @@ python -m venv .venv
 
 ```powershell
 pwsh -File scripts\test-all.ps1            # 一键：后端编译 + 独立校验 + 前端测试（后端在线时含接口冒烟）
-pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、健康脱敏、未知路径 404、真实视频与上传（23 项）
+pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、CORS、Cookie、会话与上传（28 项）
 pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（14 项）
 pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、分页、导出（40 项）
 pwsh -File scripts\batch6-unit-check.ps1   # 复核/作废规则、记录表渲染与识别失败文案（22 项）
@@ -232,7 +232,7 @@ pwsh -File scripts\check-environment.ps1                    # 环境检查（JDK
 pwsh -File scripts\init-database.ps1                        # 建库与初始化数据
 pwsh -File scripts\start-backend.ps1                       # 启动后端并等待健康检查
 pwsh -File scripts\stop-backend.ps1                        # 停止后端
-pwsh -File scripts\backup.ps1 -Password 123456 -IncludeUploads  # 备份数据库与视频
+pwsh -File scripts\backup.ps1 -Password <数据库口令> -IncludeUploads  # 备份数据库与视频
 pwsh -File scripts\package-release.ps1                      # 生成 dist/balance-check-<版本> 与 zip
 pwsh -File scripts\verify-release.ps1 -Path dist\balance-check-0.1.0-SNAPSHOT
 pwsh -File scripts\stress-test.ps1 -BaseUrl http://localhost:8081 -VideoDir D:\videos
@@ -241,7 +241,7 @@ pwsh -File scripts\mobile-acceptance.ps1 -Port 9222 -AppUrl http://<电脑IP>:51
                                            # 移动视口 + 局域网地址验收
 ```
 
-已知限制：本机 Maven 的 testCompile 仍使用独立 runner 验证；识别模板覆盖 F001、F002 的现有固定机位，更换机位或新设备需补标定模板与设备映射。当前仍为单实例内存 Session，多实例部署需要共享会话。
+已知限制：`mvnw test` 已可执行，但后端规则仍主要由独立 runner 覆盖；识别模板覆盖 F001、F002 的现有固定机位和一条 F003 手机样本，更换机位或新设备仍需补标定模板与设备映射。当前仍为单实例内存 Session，多实例部署需要共享会话。
 
 ## 九、批次进度
 

@@ -330,14 +330,20 @@ public class VideoRecognitionService {
     /** 识别成功后按策略删除源视频，释放磁盘；失败时保留文件便于重试。 */
     private boolean cleanupSource(Long videoId, Path videoPath) {
         try {
-            Files.deleteIfExists(videoPath);
             videoMapper.clearSource(videoId);
-            log.info("源视频已按策略清理：video={}", videoId);
-            return true;
-        } catch (IOException ex) {
-            log.warn("清理源视频失败，保留文件：video={}", videoId, ex);
+        } catch (RuntimeException ex) {
+            log.warn("源视频数据库状态清理失败，保留文件：video={}", videoId, ex);
             return false;
         }
+        try {
+            Files.deleteIfExists(videoPath);
+            log.info("源视频已按策略清理：video={}", videoId);
+        } catch (IOException ex) {
+            // 数据库中的源路径已清空，用户不会再看到不可用视频；残留文件可由运维清理。
+            log.warn("源视频状态已清理，但物理文件删除失败：video={}, path={}",
+                    videoId, videoPath, ex);
+        }
+        return true;
     }
 
     private String limit(String value, int maxLength) {

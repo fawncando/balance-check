@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $base = $BaseUrl.TrimEnd('/')
 $repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
 if (-not $Python) {
@@ -29,8 +30,8 @@ function CardBody([string]$cardNo) {
     return @{ cardNo = $cardNo } | ConvertTo-Json
 }
 
-$admin = Login 'admin' '123456'
-$inspector = Login 'liyi' '123456'
+$admin = Login 'admin' $DemoPassword
+$inspector = Login 'liyi' $DemoPassword
 
 $knownUsers = @(((Invoke-WebRequest "$base/api/users" -WebSession $admin).Content |
     ConvertFrom-Json).data)

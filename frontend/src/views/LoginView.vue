@@ -6,7 +6,7 @@ import { login } from '../stores/auth'
 import { isMobileClient, landingPath } from '../utils/device'
 
 const username = ref('liyi')
-const password = ref('123456')
+const password = ref('')
 const loading = ref(false)
 const router = useRouter()
 const route = useRoute()
@@ -48,7 +48,7 @@ async function submit() {
       </el-form>
 
       <div class="demo">
-        <div>演示账号（口令均为 123456）</div>
+        <div>演示账号口令由本机部署密钥提供，不在前端代码中保存</div>
         <div>liyi 检验人员 · qiyi 复核确认人员 · admin 管理员</div>
       </div>
       <div class="foot">

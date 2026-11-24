@@ -167,6 +167,19 @@ def sartorius_reading(profile, text, digit_x0):
             unit_mg = True
         else:
             return None
+    elif rule == "sartorius_auto":
+        if len(text) == 7 and text.startswith("1"):
+            pos = 3
+        elif len(text) == 7 and text.startswith("20000"):
+            pos = 5
+            unit_mg = True
+        elif len(text) == 6:
+            pos = 4
+            unit_mg = True
+        elif len(text) == 5:
+            pos = 1
+        else:
+            return None
     else:
         raise ValueError(f"unsupported Sartorius decoder: {rule}")
 
@@ -212,13 +225,21 @@ def decode_gray_frame(frame, profile, templates, roi=DISPLAY_ROI):
             value = round(float(text.replace(" ", "")), 8)
         except ValueError:
             value = None
-        return value, confidence, "g"
+        display_unit = config.get("display_unit", "g")
+        if value is not None and display_unit == "mg":
+            value = round(value / 1000, 8)
+        return value, confidence, display_unit
 
-    boxes = sartorius.digit_boxes(panel)
+    light_digits = bool(config.get("light_digits", False))
+    threshold_value = int(config.get("threshold_value", 0))
+    boxes = sartorius.digit_boxes(panel, light_digits, threshold_value)
     text = ""
     confidences = []
     for box in boxes:
-        digit, confidence = classify_glyph(sartorius.glyph(panel, box), templates)
+        digit, confidence = classify_glyph(
+            sartorius.glyph(panel, box, light_digits, threshold_value),
+            templates,
+        )
         text += digit
         confidences.append(confidence)
     if "?" in text or not boxes:
@@ -234,7 +255,9 @@ def find_display_roi(frames, profile, templates):
     """Locate a moved or zoomed display using nominal-value agreement."""
     if not frames:
         return None
-    base_x, base_y, base_w, base_h = DISPLAY_ROI
+    base_x, base_y, base_w, base_h = PROFILES[profile].get(
+        "display_roi", DISPLAY_ROI
+    )
     scales = (0.7, 0.85, 1.0, 1.15, 1.3)
     x_shifts = range(-180, 181, 60)
     y_shifts = range(-300, 301, 75)
@@ -415,9 +438,9 @@ def analyze(video, profile, ffmpeg, out_path=None, min_confidence=55.0):
     templates, config = load_templates(profile)
     with tempfile.TemporaryDirectory(prefix="bc-rec-") as tmp:
         frames = extract_frames(video, tmp, ffmpeg)
-        values = decode_values(frames, profile, templates)
+        display_roi = tuple(config.get("display_roi", DISPLAY_ROI))
+        values = decode_values(frames, profile, templates, display_roi)
         weighings = collect_weighings(values, config["nominals"])
-        display_roi = DISPLAY_ROI
         adaptive_roi_used = False
         if len(weighings) < 9:
             adaptive_roi = find_display_roi(frames, profile, templates)

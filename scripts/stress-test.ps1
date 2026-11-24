@@ -8,6 +8,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $base = $BaseUrl.TrimEnd('/')
+$repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
+$runtimeEnv = Join-Path $repo '.local\runtime.env.ps1'
+if (Test-Path -LiteralPath $runtimeEnv) {
+    . $runtimeEnv
+}
 $workerPath = Join-Path $PSScriptRoot 'stress-worker.ps1'
 $cases = @(
     @{ username = 'liyi'; balance = 'F001'; video = 'Balance_2.mp4' },

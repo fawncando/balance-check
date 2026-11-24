@@ -66,7 +66,7 @@ Check '视频识别依赖 requirements.txt' (Test-Path (Join-Path $root 'analysi
 Check '视频识别档案 profiles.json' (Test-Path (Join-Path $root 'analysis\profiles.json'))
 $templateDir = Join-Path $root 'analysis\templates'
 $templateCount = if (Test-Path $templateDir) { @(Get-ChildItem $templateDir -Filter '*.npz').Count } else { 0 }
-Check '视频识别标定模板（3 个）' ($templateCount -eq 3) ("{0} 个" -f $templateCount)
+Check '视频识别标定模板（6 个）' ($templateCount -eq 6) ("{0} 个" -f $templateCount)
 
 $docs = Join-Path $root 'docs'
 $docCount = if (Test-Path $docs) { @(Get-ChildItem $docs -Filter '*.md' -Recurse).Count } else { 0 }

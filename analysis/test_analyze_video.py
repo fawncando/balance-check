@@ -15,6 +15,7 @@ from analyze_video import (  # noqa: E402
     PROFILES,
     detect_person_card,
     extract_frames,
+    load_templates,
     normalize_frame,
     nominal_of,
     sartorius_reading,
@@ -28,6 +29,17 @@ class SartoriusValueTest(unittest.TestCase):
         self.assertAlmostEqual(sartorius_value("f002a", "1000004", 42), 100.0004)
         self.assertAlmostEqual(sartorius_value("f002a", "200002", 42), 20.0002)
         self.assertAlmostEqual(sartorius_value("f002a", "20001", 42), 2.0001)
+
+    def test_f003_rules(self):
+        self.assertAlmostEqual(sartorius_value("f003", "1999932", 70), 199.9932)
+        self.assertAlmostEqual(sartorius_value("f003", "499984", 70), 49.9984)
+        self.assertAlmostEqual(sartorius_value("f003", "99997", 70), 9.9997)
+
+    def test_f002_auto_rules(self):
+        self.assertAlmostEqual(sartorius_value("f002c", "1000002", 70), 100.0002)
+        self.assertAlmostEqual(sartorius_value("f002c", "2000012", 87), 20.00012)
+        self.assertAlmostEqual(sartorius_value("f002c", "200004", 124), 2.00004)
+        self.assertAlmostEqual(sartorius_value("f002c", "20000", 123), 2.0)
 
     def test_f002b_g_range(self):
         self.assertAlmostEqual(sartorius_value("f002b", "1000003", 42), 100.0003)
@@ -50,8 +62,20 @@ class SartoriusValueTest(unittest.TestCase):
         self.assertEqual(nominal_of(2.00008, nominals), 2)
 
     def test_profiles_are_data_driven(self):
-        self.assertEqual(set(PROFILES), {"f001", "f002a", "f002b"})
+        self.assertEqual(
+            set(PROFILES),
+            {"f001", "f001_mg", "f002a", "f002b", "f002c", "f003"},
+        )
         self.assertEqual(PROFILES["f002b"]["decoder"], "sartorius_mixed")
+        self.assertEqual(PROFILES["f002c"]["decoder"], "sartorius_auto")
+        self.assertEqual(PROFILES["f001_mg"]["display_unit"], "mg")
+        self.assertTrue(PROFILES["f003"]["light_digits"])
+        self.assertEqual(PROFILES["f003"]["display_roi"], [16, 550, 400, 180])
+        self.assertEqual(PROFILES["f003"]["threshold_value"], 220)
+
+    def test_f003_template_covers_all_digits(self):
+        templates, _ = load_templates("f003")
+        self.assertEqual(set(templates), set("0123456789"))
 
     def test_person_card_qr_is_detected(self):
         qr = cv2.QRCodeEncoder.create().encode("RY-001")

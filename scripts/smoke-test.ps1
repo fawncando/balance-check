@@ -6,6 +6,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $base = $BaseUrl.TrimEnd('/')
 $script:pass = 0
 $script:fail = 0
@@ -33,6 +34,17 @@ try {
     Check '健康检查返回 UP' ($r.StatusCode -eq 200 -and $b.data.status -eq 'UP') "status=$($r.StatusCode)"
     $storageFields = @($b.data.storage.PSObject.Properties.Name)
     Check '健康检查不暴露服务器路径' ($storageFields -notcontains 'path')
+    $r = Invoke-WebRequest "$base/api/system/health" -Headers @{
+        Origin = 'http://localhost:5173'
+    } -SkipHttpErrorCheck
+    $corsAllowed = $r.Headers['Access-Control-Allow-Origin'] -eq 'http://localhost:5173'
+    $corsExposed = $r.Headers['Access-Control-Expose-Headers'] -eq 'X-Total-Count'
+    Check 'CORS 允许受信前端来源并暴露记录总数' ($corsAllowed -and $corsExposed) `
+        "origin=$($r.Headers['Access-Control-Allow-Origin']) exposed=$($r.Headers['Access-Control-Expose-Headers'])"
+    $r = Invoke-WebRequest "$base/api/system/health" -Headers @{
+        Origin = 'http://evil.example'
+    } -SkipHttpErrorCheck
+    Check 'CORS 拒绝非白名单来源' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"
 
     $r = Invoke-WebRequest "$base/" -SkipHttpErrorCheck
     Check '根路径返回 404 而非 500' ($r.StatusCode -eq 404) "status=$($r.StatusCode)"
@@ -49,9 +61,20 @@ try {
         "status=$($r.StatusCode) message=$($b.message)"
 
     $r = Invoke-WebRequest "$base/api/auth/login" -Method Post -ContentType 'application/json' `
-        -Body '{"username":"liyi","password":"123456"}' -SessionVariable web -SkipHttpErrorCheck
+        -Body (@{ username = 'liyi'; password = $DemoPassword } | ConvertTo-Json -Compress) `
+        -SessionVariable web -SkipHttpErrorCheck
     $b = Body $r
     Check '检验人员登录成功' ($r.StatusCode -eq 200 -and $b.data.role -eq 'INSPECTOR') "role=$($b.data.role)"
+    $cookieHeader = [string]$r.Headers['Set-Cookie']
+    Check '会话 Cookie 启用 HttpOnly 与 SameSite' `
+        ($cookieHeader -match 'HttpOnly' -and $cookieHeader -match 'SameSite=Lax') $cookieHeader
+    $oldSessionId = $web.Cookies.GetCookies([Uri]$base)['JSESSIONID'].Value
+    $r = Invoke-WebRequest "$base/api/auth/login" -Method Post -ContentType 'application/json' `
+        -Body (@{ username = 'liyi'; password = $DemoPassword } | ConvertTo-Json -Compress) `
+        -WebSession $web -SkipHttpErrorCheck
+    $newSessionId = $web.Cookies.GetCookies([Uri]$base)['JSESSIONID'].Value
+    Check '登录后轮换会话标识' ($oldSessionId -and $newSessionId -and $oldSessionId -ne $newSessionId) `
+        "old=$oldSessionId new=$newSessionId"
 
     $r = Invoke-WebRequest "$base/api/auth/me" -WebSession $web -SkipHttpErrorCheck
     $b = Body $r
@@ -135,6 +158,15 @@ try {
 
     $r = Invoke-WebRequest "$base/api/auth/me" -WebSession $web -SkipHttpErrorCheck
     Check '退出后会话失效（401）' ($r.StatusCode -eq 401) "status=$($r.StatusCode)"
+
+    $probe = 'ratelimit-' + (Get-Date -Format 'HHmmssfff')
+    $last = $null
+    for ($i = 1; $i -le 6; $i++) {
+        $last = Invoke-WebRequest "$base/api/auth/login" -Method Post -ContentType 'application/json' `
+            -Body (@{ username = $probe; password = 'wrong-password' } | ConvertTo-Json -Compress) `
+            -SkipHttpErrorCheck
+    }
+    Check '连续登录失败触发限流' ($last.StatusCode -eq 429) "status=$($last.StatusCode)"
 
 } finally {
     foreach ($tempFile in $tempFiles) {

@@ -2,6 +2,7 @@
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $base = $BaseUrl.TrimEnd('/')
 $pass = 0
 $fail = 0
@@ -48,7 +49,7 @@ $single = @(
 
 Write-Host "== 批次 6 冒烟测试 $base ==" -ForegroundColor Cyan
 
-$inspector = Login 'liyi' '123456'
+$inspector = Login 'liyi' $DemoPassword
 Check '检验人员登录' ($inspector.Cookies.Count -gt 0)
 
 $r = CreateRecord $inspector 1 '2026-10-17T09:12:00' $single
@@ -64,7 +65,7 @@ $r = Invoke-WebRequest "$base/api/calibrations/$recordId/review" -Method Post -W
     -ContentType 'application/json; charset=utf-8' -Body (@{ result = 'APPROVED'; comment = '自审' } | ConvertTo-Json) -SkipHttpErrorCheck
 Check '检验人员不能复核记录' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"
 
-$reviewer = Login 'qiyi' '123456'
+$reviewer = Login 'qiyi' $DemoPassword
 Check '复核人员登录' ($reviewer.Cookies.Count -gt 0)
 
 $r = Invoke-WebRequest "$base/api/calibrations?status=SUBMITTED" -WebSession $reviewer -SkipHttpErrorCheck
@@ -105,7 +106,7 @@ $r = Invoke-WebRequest "$base/api/calibrations/$recordId/review" -Method Post -W
     -ContentType 'application/json; charset=utf-8' -Body (@{ result = 'APPROVED' } | ConvertTo-Json) -SkipHttpErrorCheck
 Check '非待复核状态不能再复核' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
-$other = Login 'lier' '123456'
+$other = Login 'lier' $DemoPassword
 $r = Invoke-WebRequest "$base/api/calibrations" -WebSession $other -SkipHttpErrorCheck
 Check '检验人员查询不到他人记录' (-not (@(Ids (($r.Content | ConvertFrom-Json).data)) -contains $recordId))
 $r = Invoke-WebRequest "$base/api/calibrations/$recordId" -WebSession $other -SkipHttpErrorCheck

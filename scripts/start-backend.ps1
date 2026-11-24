@@ -1,6 +1,6 @@
 ﻿# 启动后端：默认使用交付包或开发目录中的 jar，可覆盖数据库与存储配置
 # 用法：pwsh -File scripts\start-backend.ps1 [-Port 8081] [-DryRun]
-#       pwsh -File scripts\start-backend.ps1 -DbPassword 123456 -UploadDir D:\data\uploads
+#       pwsh -File scripts\start-backend.ps1 -DbPassword <数据库口令> -UploadDir D:\data\uploads
 param(
     [string]$Jar = '',
     [string]$JavaHome = $env:JAVA_HOME,
@@ -14,6 +14,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
+$runtimeEnv = Join-Path $root '.local\runtime.env.ps1'
+if (Test-Path -LiteralPath $runtimeEnv) {
+    . $runtimeEnv
+}
 
 if (-not $Jar) {
     $releaseJar = Join-Path $root 'backend\balance-check.jar'
@@ -26,7 +30,7 @@ if (-not $Jar) {
     }
 }
 if (-not $Jar -or -not (Test-Path $Jar)) {
-    Write-Host '找不到后端 jar：请先在 backend 目录执行 .\mvnw.cmd -o -DskipTests package，或用 -Jar 指定路径。' -ForegroundColor Yellow
+    Write-Host '找不到后端 jar：请先在 backend 目录执行 .\mvnw.cmd -DskipTests package，或用 -Jar 指定路径。' -ForegroundColor Yellow
     exit 1
 }
 
@@ -38,6 +42,10 @@ if ($JavaHome) {
 if (-not $java) {
     $command = Get-Command java -ErrorAction SilentlyContinue
     if ($command) { $java = $command.Source }
+}
+if (-not $DbPassword -and -not $env:DB_PASSWORD) {
+    Write-Host '缺少数据库口令。请设置 DB_PASSWORD，或使用 -DbPassword，或创建 .local\runtime.env.ps1。' -ForegroundColor Yellow
+    exit 1
 }
 if (-not $java) {
     Write-Host '找不到 java，请安装 JDK 17 及以上，或设置 JAVA_HOME。' -ForegroundColor Yellow

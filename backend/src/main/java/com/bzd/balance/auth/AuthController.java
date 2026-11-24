@@ -31,6 +31,7 @@ public class AuthController {
                                           HttpSession session) {
         SessionUser user = authService.login(request.getUsername(), request.getPassword(),
                 httpRequest.getRemoteAddr());
+        httpRequest.changeSessionId();
         session.setAttribute(CurrentUser.SESSION_KEY, user);
         return ApiResponse.ok(user);
     }

@@ -1,10 +1,12 @@
 ﻿# 初始化数据库：导入 database/schema.sql 与 database/seed.sql
-# 用法：pwsh -File scripts\init-database.ps1 [-Server localhost] [-Port 3306] [-User root] [-Password 123456] [-DryRun]
+# 用法：pwsh -File scripts\init-database.ps1 -Password <root密码> -AppPassword <应用数据库密码>
 param(
     [string]$Server = 'localhost',
     [int]$Port = 3306,
     [string]$User = 'root',
     [string]$Password = '',
+    [string]$AppUser = 'balance_app',
+    [string]$AppPassword = '',
     [string]$SchemaFile = '',
     [string]$SeedFile = '',
     [switch]$DryRun
@@ -36,6 +38,12 @@ if (-not $DryRun -and -not $Password) {
         [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
     }
 }
+if ($AppUser -notmatch '^[a-z][a-z0-9_]{2,31}$') {
+    throw '应用数据库用户名只能包含小写字母、数字和下划线，并以字母开头'
+}
+if (-not $DryRun -and -not $AppPassword) {
+    throw '初始化数据库时必须提供 -AppPassword，不能使用空口令'
+}
 
 Write-Host ("== 初始化数据库 {0}:{1} ==" -f $Server, $Port) -ForegroundColor Cyan
 $env:MYSQL_PWD = $Password
@@ -65,6 +73,29 @@ try {
     if ($DryRun) {
         Write-Host '（试运行，未执行导入）'
         exit 0
+    }
+
+    $escapedAppPassword = $AppPassword.Replace("'", "''")
+    $sql = @"
+CREATE USER IF NOT EXISTS '$AppUser'@'localhost' IDENTIFIED BY '$escapedAppPassword';
+ALTER USER '$AppUser'@'localhost' IDENTIFIED BY '$escapedAppPassword';
+GRANT SELECT, INSERT, UPDATE, DELETE ON balance_check.* TO '$AppUser'@'localhost';
+FLUSH PRIVILEGES;
+"@
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $mysql.Source
+    $psi.Arguments = "-h `"$Server`" -P $Port -u `"$User`" --default-character-set=utf8mb4"
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardInput = $true
+    $psi.RedirectStandardError = $true
+    $psi.CreateNoWindow = $true
+    $process = [System.Diagnostics.Process]::Start($psi)
+    $process.StandardInput.Write($sql)
+    $process.StandardInput.Close()
+    $appUserError = $process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+    if ($process.ExitCode -ne 0) {
+        throw "创建应用数据库账号失败：$appUserError"
     }
 
     $verifyLine = 'mysql -h {0} -P {1} -u {2} -N -e "SELECT COUNT(*) FROM balance_check.sys_user"' -f $Server, $Port, $User

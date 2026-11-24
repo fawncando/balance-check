@@ -2,6 +2,7 @@
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $base = $BaseUrl.TrimEnd('/')
 $pass = 0
 $fail = 0
@@ -36,7 +37,7 @@ $dual = @(
 )
 
 try {
-    $web = Login 'liyi' '123456'
+    $web = Login 'liyi' $DemoPassword
     Check '检验人员登录' ($web.Cookies.Count -gt 0)
 
     $body = @{ balanceId = 1; calibrationTime = '2026-10-17T09:12:00'; cleanOk = $true; levelOk = $true
@@ -74,7 +75,7 @@ try {
     $r = Invoke-WebRequest "$base/api/calibrations/$goodId" -Method Put -WebSession $web -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck
     Check '提交后禁止修改' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
-    $reviewer = Login 'qiyi' '123456'
+    $reviewer = Login 'qiyi' $DemoPassword
     $body = @{ balanceId = 1; calibrationTime = '2026-10-17T11:00:00'; cleanOk = $true; levelOk = $true
                internalCalibrationResult = '是'; remark = '无'; manualEntryReason = '自动化测试补录'; measurements = $single } | ConvertTo-Json -Depth 5
     $r = Invoke-WebRequest "$base/api/calibrations" -Method Post -WebSession $reviewer -ContentType 'application/json; charset=utf-8' -Body $body -SkipHttpErrorCheck

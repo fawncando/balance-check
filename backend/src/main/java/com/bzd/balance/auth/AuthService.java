@@ -13,18 +13,24 @@ public class AuthService {
 
     private final UserMapper userMapper;
     private final AuditService auditService;
+    private final LoginAttemptService loginAttemptService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    public AuthService(UserMapper userMapper, AuditService auditService) {
+    public AuthService(UserMapper userMapper, AuditService auditService,
+                       LoginAttemptService loginAttemptService) {
         this.userMapper = userMapper;
         this.auditService = auditService;
+        this.loginAttemptService = loginAttemptService;
     }
 
     public SessionUser login(String username, String password, String ip) {
+        loginAttemptService.assertAllowed(username, ip);
         User user = userMapper.findByUsername(username);
         if (user == null || !encoder.matches(password, user.getPasswordHash())) {
+            loginAttemptService.recordFailure(username, ip);
             throw new BizException(401, "账号或密码错误");
         }
+        loginAttemptService.recordSuccess(username, ip);
         SessionUser sessionUser = new SessionUser(
                 user.getId(), user.getUsername(), user.getDisplayName(), user.getRole(),
                 user.getCardNo(), user.getSessionVersion());

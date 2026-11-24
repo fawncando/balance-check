@@ -16,7 +16,7 @@ def digit_boxes(gray):
     _, _, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
     boxes = []
     for x, y, w, h, area in stats[1:]:
-        if 8 <= w <= 32 and 30 <= h <= 55 and area >= 100 and 30 < x < 260:
+        if 8 <= w <= 32 and 30 <= h <= 55 and area >= 100 and 20 < x < 300:
             boxes.append(
                 {"x": int(x), "y": int(y), "w": int(w), "h": int(h)}
             )

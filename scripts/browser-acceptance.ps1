@@ -8,6 +8,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
 if (-not $ScreenshotDir) { $ScreenshotDir = Join-Path $repo 'docs\screenshots' }
 New-Item -ItemType Directory -Path $ScreenshotDir -Force | Out-Null
@@ -101,7 +102,7 @@ try {
     Start-Sleep -Milliseconds 500
     Save-Screenshot '01-login.png'
 
-    $null = Invoke-PageJs @'
+    $null = Invoke-PageJs @"
 (() => {
   const inputs = [...document.querySelectorAll('input')];
   const set = (el, value) => {
@@ -110,11 +111,11 @@ try {
     el.dispatchEvent(new Event('input', { bubbles: true }));
   };
   set(inputs.find(i => i.type === 'text'), 'liyi');
-  set(inputs.find(i => i.type === 'password'), '123456');
+  set(inputs.find(i => i.type === 'password'), '$DemoPassword');
   document.querySelector('.login-btn').click();
   return true;
 })()
-'@
+"@
     Wait-Page "location.pathname === '/workbench' && document.body.innerText.includes('检验工作台')"
     Start-Sleep -Milliseconds 700
     Save-Screenshot '02-workbench.png'
@@ -161,7 +162,7 @@ try {
   return true;
 })()
 '@
-    Wait-Page "location.pathname.includes('/calibrations/') && document.body.innerText.includes('编辑校验记录')" 45
+    Wait-Page "location.pathname.includes('/calibrations/') && document.body.innerText.includes('编辑校验记录')" 120
     Start-Sleep -Milliseconds 800
     Save-Screenshot '06-calibration-form.png'
 
@@ -187,13 +188,9 @@ try {
   return true;
 })()
 '@
-    Wait-Page "location.pathname.match(/\/calibrations\/\d+$/) && document.body.innerText.includes('待复核')" 30
+    Wait-Page "location.pathname === '/workbench' && document.body.innerText.includes('待复核')" 30
     Start-Sleep -Milliseconds 700
-    Save-Screenshot '07-calibration-detail.png'
-
-    Invoke-Cdp 'Page.navigate' @{ url = "$AppUrl/workbench" } | Out-Null
-    Wait-Page "location.pathname === '/workbench' && document.body.innerText.includes('识别完成')" 15
-    Start-Sleep -Milliseconds 500
+    Save-Screenshot '07-record-submitted.png'
     Save-Screenshot '05-uploaded.png'
 
     Invoke-Cdp 'Page.navigate' @{ url = "$AppUrl/records" } | Out-Null

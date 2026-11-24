@@ -8,6 +8,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
 if (-not $ScreenshotDir) { $ScreenshotDir = Join-Path $repo 'docs\screenshots' }
 New-Item -ItemType Directory -Path $ScreenshotDir -Force | Out-Null
@@ -79,7 +80,7 @@ try {
     Cdp 'DOM.enable' | Out-Null
     Cdp 'Network.enable' | Out-Null
     Cdp 'Network.clearBrowserCookies' | Out-Null
-    $login = @{ username = 'liyi'; password = '123456' } | ConvertTo-Json -Compress
+    $login = @{ username = 'liyi'; password = $DemoPassword } | ConvertTo-Json -Compress
     $web = $null
     Invoke-WebRequest "$ApiUrl/api/auth/login" -Method Post `
         -ContentType 'application/json' -Body $login -SessionVariable web | Out-Null
@@ -98,11 +99,15 @@ try {
         deviceScaleFactor = 2
         mobile = $true
     } | Out-Null
+    Cdp 'Network.setUserAgentOverride' @{
+        userAgent = 'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 ' +
+            '(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36'
+    } | Out-Null
     Cdp 'Page.navigate' @{ url = "$AppUrl/mobile" } | Out-Null
     WaitPage "location.pathname === '/login' || location.pathname === '/mobile'" 15
 
     if (Eval "location.pathname === '/login'") {
-        $null = Eval @'
+        $null = Eval @"
 (() => {
   const inputs = [...document.querySelectorAll('input')];
   const set = (el, value) => {
@@ -111,10 +116,10 @@ try {
     el.dispatchEvent(new Event('input', { bubbles: true }));
   };
   set(inputs.find(i => i.type === 'text'), 'liyi');
-  set(inputs.find(i => i.type === 'password'), '123456');
+  set(inputs.find(i => i.type === 'password'), '$DemoPassword');
   return true;
 })()
-'@
+"@
         Start-Sleep -Milliseconds 400
         $buttonPoint = Eval @'
 (() => {
@@ -138,7 +143,8 @@ try {
         } | Out-Null
         Start-Sleep -Seconds 2
         if (Eval "location.pathname === '/login'") {
-            $loginBody = '{"username":"liyi","password":"123456"}'
+            $loginBody = @{ username = 'liyi'; password = $DemoPassword } |
+                ConvertTo-Json -Compress
             $loginResult = Eval @"
 fetch('/api/auth/login', {
   method: 'POST',
@@ -194,7 +200,8 @@ fetch('/api/auth/me', {credentials: 'include'})
     $query = Cdp 'DOM.querySelector' @{ nodeId = $doc.root.nodeId; selector = 'input[type=file]' }
     if (-not $query.nodeId) { throw '手机上传页找不到文件输入框' }
     Cdp 'DOM.setFileInputFiles' @{ nodeId = $query.nodeId; files = @($VideoPath) } | Out-Null
-    WaitPage "document.body.innerText.includes('Balance_1_second.mp4')"
+    $videoName = [IO.Path]::GetFileName($VideoPath)
+    WaitPage "document.body.innerText.includes('$videoName')"
     Screenshot '10-mobile-selected.png'
 
     $null = Eval @'

@@ -12,6 +12,10 @@ param(
 $ErrorActionPreference = 'Continue'
 $base = $BaseUrl.TrimEnd('/')
 $repo = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
+$runtimeEnv = Join-Path $repo '.local\runtime.env.ps1'
+if (Test-Path -LiteralPath $runtimeEnv) {
+    . $runtimeEnv
+}
 if (-not $MavenRepo -and (Test-Path 'D:\develop\m2repo')) {
     $MavenRepo = 'D:\develop\m2repo'
 }
@@ -53,7 +57,7 @@ if ($SkipBuild) {
     Push-Location (Join-Path $repo 'backend')
     try {
         if ($mvnJavaHome) { $env:JAVA_HOME = $mvnJavaHome }
-        $mvnArgs = @('-o', '-q', '-DskipTests', 'compile')
+        $mvnArgs = @('-q', '-DskipTests', 'compile')
         if ($MavenRepo) {
             $mvnArgs += "-Dmaven.repo.local=$MavenRepo"
         }

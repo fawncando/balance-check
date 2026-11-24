@@ -2,6 +2,7 @@
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $base = $BaseUrl.TrimEnd('/')
 $pass = 0
 $fail = 0
@@ -41,7 +42,7 @@ $note = '中文说明"含引号"与反斜杠\与制表符'
 
 Write-Host "== 批次 7 冒烟测试 $base ==" -ForegroundColor Cyan
 
-$admin = Login 'admin' '123456'
+$admin = Login 'admin' $DemoPassword
 Check '管理员登录' ($admin.Cookies.Count -gt 0)
 
 $r = Invoke-WebRequest "$base/api/weight-sets" -WebSession $admin -SkipHttpErrorCheck
@@ -52,8 +53,8 @@ Check '砝码组清单可查询' ($r.StatusCode -eq 200 -and $null -ne $setA -an
 Check '砝码组带出盒内砝码' ($null -ne $setA -and @($setA.weights).Count -eq 3 -and [double]$setA.weights[0] -eq 200) `
     "weights=$($setA.weights -join ',')"
 
-$inspector = Login 'liyi' '123456'
-$reviewer = Login 'qiyi' '123456'
+$inspector = Login 'liyi' $DemoPassword
+$reviewer = Login 'qiyi' $DemoPassword
 
 $r = Invoke-WebRequest "$base/api/balances" -Method Post -WebSession $inspector `
     -ContentType 'application/json; charset=utf-8' `

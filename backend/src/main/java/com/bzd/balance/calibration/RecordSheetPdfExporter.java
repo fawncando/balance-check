@@ -140,7 +140,7 @@ public class RecordSheetPdfExporter {
             graphics.setColor(new Color(90, 105, 135));
             graphics.drawRect(tableLeft, tableTop, tableWidth,
                     rowHeight * 10);
-            graphics.setFont(new Font("Microsoft YaHei", Font.BOLD, 17));
+            graphics.setFont(small.deriveFont(Font.BOLD));
             int x = tableLeft;
             for (int i = 0; i < widths.length; i++) {
                 drawCell(graphics, headers[i], x, tableTop, widths[i], rowHeight);

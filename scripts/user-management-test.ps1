@@ -2,6 +2,7 @@
 param([string]$BaseUrl = 'http://localhost:8081')
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $base = $BaseUrl.TrimEnd('/')
 $pass = 0
 $fail = 0
@@ -28,21 +29,21 @@ function UserBody($username, $displayName, $password, $role) {
     } | ConvertTo-Json
 }
 
-$adminLogin = Login 'admin' '123456'
+$adminLogin = Login 'admin' $DemoPassword
 $admin = $adminLogin.Web
-$inspector = (Login 'liyi' '123456').Web
+$inspector = (Login 'liyi' $DemoPassword).Web
 $suffix = Get-Date -Format 'MMddHHmmss'
 $username = "autotest$suffix"
 $initialPassword = 'Init1234'
 $newPassword = 'Reset5678'
 
 $r = Invoke-WebRequest "$base/api/users" -Method Post -WebSession $inspector `
-    -ContentType 'application/json' -Body (UserBody 'denied-user' '无权限人员' '12345678' 'INSPECTOR') `
+    -ContentType 'application/json' -Body (UserBody 'denied-user' '无权限人员' 'TempPass2026!' 'INSPECTOR') `
     -SkipHttpErrorCheck
 Check '检验人员不能新增账号' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"
 
 $r = Invoke-WebRequest "$base/api/users" -Method Post -WebSession $admin `
-    -ContentType 'application/json' -Body (UserBody 'ab' '账号过短' '12345678' 'INSPECTOR') `
+    -ContentType 'application/json' -Body (UserBody 'ab' '账号过短' 'TempPass2026!' 'INSPECTOR') `
     -SkipHttpErrorCheck
 Check '非法登录账号被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
@@ -58,7 +59,7 @@ $r = Invoke-WebRequest "$base/api/users" -Method Post -WebSession $admin `
 Check '超过 BCrypt 字节上限的密码被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
 $r = Invoke-WebRequest "$base/api/users" -Method Post -WebSession $admin `
-    -ContentType 'application/json' -Body (UserBody "role$suffix" '非法角色' '12345678' 'ROOT') `
+    -ContentType 'application/json' -Body (UserBody "role$suffix" '非法角色' 'TempPass2026!' 'ROOT') `
     -SkipHttpErrorCheck
 Check '非法角色被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
@@ -72,7 +73,7 @@ Check '新账号默认启用' ($created.status -eq 'ACTIVE' -and -not $created.c
 
 $r = Invoke-WebRequest "$base/api/users" -Method Post -WebSession $admin `
     -ContentType 'application/json' `
-    -Body (UserBody $username '重复账号' '12345678' 'INSPECTOR') -SkipHttpErrorCheck
+    -Body (UserBody $username '重复账号' 'TempPass2026!' 'INSPECTOR') -SkipHttpErrorCheck
 Check '重复登录账号被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
 $newLogin = Login $username $initialPassword
@@ -81,7 +82,7 @@ Check '新账号可用自定义密码登录' ($newLogin.Response.StatusCode -eq 
 $newSession = $newLogin.Web
 
 $r = Invoke-WebRequest "$base/api/users" -Method Post -WebSession $newSession `
-    -ContentType 'application/json' -Body (UserBody "selfmade$suffix" '自建账号' '12345678' 'ADMIN') `
+    -ContentType 'application/json' -Body (UserBody "selfmade$suffix" '自建账号' 'TempPass2026!' 'ADMIN') `
     -SkipHttpErrorCheck
 Check '检验人员不能自行提升权限' ($r.StatusCode -eq 403) "status=$($r.StatusCode)"
 

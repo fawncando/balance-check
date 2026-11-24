@@ -31,7 +31,7 @@ Write-Host ("== 打包 {0} ==" -f $releaseName) -ForegroundColor Cyan
 Write-Host ("输出目录：{0}" -f $target)
 
 if ($DryRun) {
-    Write-Host '[1/6] 构建后端：backend\mvnw.cmd -o -DskipTests package' -ForegroundColor DarkGray
+    Write-Host '[1/6] 构建后端：backend\mvnw.cmd -DskipTests package' -ForegroundColor DarkGray
     Write-Host '[2/6] 构建前端：frontend 目录执行 npm run build' -ForegroundColor DarkGray
     Write-Host '[3/6] 复制 jar 与前端静态资源' -ForegroundColor DarkGray
     Write-Host '[4/6] 复制 database、analysis、docs、scripts 与 README' -ForegroundColor DarkGray
@@ -51,7 +51,7 @@ if (-not $SkipBackend) {
     Push-Location (Join-Path $repo 'backend')
     try {
         if ($mvnJavaHome) { $env:JAVA_HOME = $mvnJavaHome }
-        $mvnArgs = @('-o', '-DskipTests', 'package')
+        $mvnArgs = @('-DskipTests', 'package')
         if ($MavenRepo) {
             $mvnArgs += "-Dmaven.repo.local=$MavenRepo"
         }
@@ -113,7 +113,13 @@ Copy-Item (Join-Path $repo 'README.md') (Join-Path $target 'README.md')
 
 Write-Host '[5/6] 生成 VERSION.txt…'
 $gitCommit = 'unknown'
-try { $gitCommit = (git -C $repo rev-parse --short HEAD) } catch { }
+try {
+    $gitCommit = (git -C $repo rev-parse --short HEAD)
+    $gitStatus = (git -C $repo status --porcelain)
+    if (-not [string]::IsNullOrWhiteSpace(($gitStatus -join ''))) {
+        $gitCommit += '-dirty'
+    }
+} catch { }
 $jdkVersion = 'unknown'
 try {
     $javaExe = if ($JavaHome) { Join-Path $JavaHome 'bin\java.exe' } else { 'java' }

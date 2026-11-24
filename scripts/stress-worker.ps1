@@ -9,11 +9,12 @@
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-credentials.ps1')
 $base = $BaseUrl.TrimEnd('/')
 
 if ($Mode -eq 'recognition') {
     $session = $null
-    $login = @{ username = $Case.username; password = '123456' } |
+    $login = @{ username = $Case.username; password = $DemoPassword } |
         ConvertTo-Json -Compress
     Invoke-WebRequest "$base/api/auth/login" -Method Post `
         -ContentType 'application/json' -Body $login -SessionVariable session | Out-Null
@@ -50,7 +51,7 @@ if ($Mode -eq 'recognition') {
 
 $session = $null
 $username = if ($Index % 2 -eq 0) { 'liyi' } else { 'lier' }
-$login = @{ username = $username; password = '123456' } | ConvertTo-Json -Compress
+$login = @{ username = $username; password = $DemoPassword } | ConvertTo-Json -Compress
 Invoke-WebRequest "$base/api/auth/login" -Method Post -ContentType 'application/json' `
     -Body $login -SessionVariable session | Out-Null
 $balances = ((Invoke-WebRequest "$base/api/balances" -WebSession $session).Content |
@@ -89,7 +90,7 @@ Invoke-WebRequest "$base/api/calibrations/$($record.id)/submit" -Method Post `
     -WebSession $session | Out-Null
 
 $reviewer = $null
-$reviewLogin = @{ username = 'qiyi'; password = '123456' } | ConvertTo-Json -Compress
+$reviewLogin = @{ username = 'qiyi'; password = $DemoPassword } | ConvertTo-Json -Compress
 Invoke-WebRequest "$base/api/auth/login" -Method Post -ContentType 'application/json' `
     -Body $reviewLogin -SessionVariable reviewer | Out-Null
 $reviewBody = @{ result = 'APPROVED'; comment = '并发复核通过' } | ConvertTo-Json -Compress

@@ -18,6 +18,7 @@ const progress = ref(0)
 const loading = ref(false)
 const mobileEntry = ref(null)
 const mobileQrVersion = ref(Date.now())
+const compact = ref(false)
 let refreshTimer = null
 
 const statusMap = {
@@ -42,6 +43,8 @@ const balanceOptions = computed(() =>
 )
 
 onMounted(async () => {
+  syncCompact()
+  window.addEventListener('resize', syncCompact)
   await Promise.all([loadBalances(), loadVideos(), loadMobileEntry()])
   refreshTimer = window.setInterval(() => {
     if (document.visibilityState === 'visible') loadVideos(true)
@@ -52,17 +55,29 @@ onMounted(async () => {
 onUnmounted(() => {
   if (refreshTimer) window.clearInterval(refreshTimer)
   document.removeEventListener('visibilitychange', onVisibilityChange)
+  window.removeEventListener('resize', syncCompact)
 })
+
+function syncCompact() {
+  compact.value = window.innerWidth <= 1200
+}
 
 function onVisibilityChange() {
   if (document.visibilityState === 'visible') loadVideos(true)
 }
 
 function displayStatus(row) {
+  if (row.calibrationStatus === 'DRAFT' && row.calibrationReviewResult === 'REJECTED') {
+    return { text: '已退回', type: 'danger' }
+  }
   if (row.status === 'ANALYZED' && row.calibrationStatus) {
     return calibrationStatusMap[row.calibrationStatus] || { text: row.calibrationStatus, type: 'info' }
   }
   return statusMap[row.status] || { text: row.status, type: 'info' }
+}
+
+function isReturned(row) {
+  return row.calibrationStatus === 'DRAFT' && row.calibrationReviewResult === 'REJECTED'
 }
 
 function openCalibration(row) {
@@ -296,22 +311,35 @@ function localDateTime(date) {
     <div class="card">
       <h2><span class="no">2</span>我的上传记录<span class="hint">复核确认人员与管理员可以看到全部记录</span></h2>
       <el-table :data="videos" v-loading="loading" size="small" empty-text="还没有上传记录">
-        <el-table-column prop="originalName" label="视频文件" min-width="260" show-overflow-tooltip />
-        <el-table-column label="大小" width="100">
+        <el-table-column label="视频文件" min-width="180">
+          <template #default="{ row }">
+            <div class="file-cell" :title="row.originalName">{{ row.originalName }}</div>
+            <div v-if="isReturned(row)" class="return-note" :title="row.calibrationReviewComment">
+              退回：{{ row.calibrationReviewComment || '请查看记录详情' }}
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="!compact" label="大小" width="75">
           <template #default="{ row }">{{ formatSize(row.sizeBytes) }}</template>
         </el-table-column>
-        <el-table-column prop="balanceCode" label="天平" width="90" />
-        <el-table-column prop="uploaderName" label="上传人" width="100" />
-        <el-table-column prop="uploadedAt" label="上传时间" width="170" />
-        <el-table-column label="状态" width="100">
+        <el-table-column prop="balanceCode" label="天平" width="65" />
+        <el-table-column v-if="!compact" prop="uploaderName" label="上传人" width="80" />
+        <el-table-column prop="uploadedAt" label="上传时间" width="140" />
+        <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="displayStatus(row).type" size="small">
               {{ displayStatus(row).text }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="message" label="说明" min-width="220" show-overflow-tooltip />
-        <el-table-column label="操作" width="150" align="center">
+        <el-table-column
+          v-if="!compact"
+          prop="message"
+          label="说明"
+          min-width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column label="操作" width="110" align="center">
           <template #default="{ row }">
             <el-button
               v-if="row.status === 'UPLOADED' && row.uploaderName === auth.user?.displayName"
@@ -332,7 +360,7 @@ function localDateTime(date) {
               link
               type="primary"
               @click="openCalibration(row)"
-            >{{ row.calibrationStatus === 'DRAFT' ? '确认结果' : '查看记录' }}</el-button>
+            >{{ isReturned(row) ? '修改退回记录' : row.calibrationStatus === 'DRAFT' ? '确认结果' : '查看记录' }}</el-button>
             <el-button
               v-if="row.status === 'UPLOADED' && row.uploaderName === auth.user?.displayName"
               link
@@ -381,4 +409,17 @@ function localDateTime(date) {
 .mobile-qr { flex: 0 0 132px; text-align: center; }
 .mobile-qr img { display: block; width: 132px; height: 132px; border: 6px solid #fff; border-radius: 10px; background: #fff; }
 .mobile-qr span { display: block; margin-top: 5px; color: #7c8ba1; font-size: 10.5px; }
+.file-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.return-note {
+  margin-top: 4px;
+  color: #b03a2e;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 820px) {
+  .mobile-entry-card { align-items: flex-start; flex-direction: column; }
+  .selected { align-items: flex-start; flex-direction: column; gap: 10px; }
+}
 </style>

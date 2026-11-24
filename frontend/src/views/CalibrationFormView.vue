@@ -30,6 +30,13 @@ const analysis = reactive({
   anomalyFrames: 0,
   personCard: null
 })
+const reviewInfo = reactive({
+  status: null,
+  result: null,
+  comment: '',
+  reviewerName: '',
+  reviewedAt: ''
+})
 
 const currentBalance = computed(() => balances.value.find((b) => b.id === balanceId.value))
 const filled = computed(() => rows.value.filter((r) => r.displayValue !== null && r.displayValue !== '').length)
@@ -110,6 +117,11 @@ async function applyRecord(record) {
   analysis.analysisConfidence = record.analysisConfidence
   analysis.anomalyFrames = record.anomalyFrames || 0
   analysis.personCard = record.personCard
+  reviewInfo.status = record.status
+  reviewInfo.result = record.reviewResult
+  reviewInfo.comment = record.reviewComment || ''
+  reviewInfo.reviewerName = record.reviewerName || ''
+  reviewInfo.reviewedAt = record.reviewedAt || ''
   rows.value = (record.measurements || []).map((m) => {
     const balance = balances.value.find((b) => b.id === record.balanceId)
     const range = balance?.ranges?.find((r) => r.seqNo === m.rangeSeq)
@@ -232,6 +244,23 @@ async function save(submitAfter = false) {
     <el-alert
       v-if="analysis.videoId && Number(analysis.analysisConfidence || 0) < 55"
       :title="`识别置信度较低：${analysis.analysisConfidence || 0}%，异常帧 ${analysis.anomalyFrames}，请重点复核`"
+      type="warning"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 12px"
+    />
+    <el-alert
+      v-if="reviewInfo.status === 'DRAFT' && reviewInfo.result === 'REJECTED'"
+      :title="`复核退回原因：${reviewInfo.comment || '未填写'}`"
+      :description="`${reviewInfo.reviewerName || '复核人员'} · ${reviewInfo.reviewedAt || ''} · 修改后可重新提交复核`"
+      type="error"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 12px"
+    />
+    <el-alert
+      v-if="reviewInfo.status === 'DRAFT' && reviewInfo.result === 'APPROVED'"
+      :title="`记录已由 ${reviewInfo.reviewerName || '复核人员'} 解锁，修改后需重新提交复核`"
       type="warning"
       :closable="false"
       show-icon

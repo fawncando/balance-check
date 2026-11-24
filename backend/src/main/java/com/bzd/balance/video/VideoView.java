@@ -13,6 +13,8 @@ public class VideoView {
     private String balanceCode;
     private Long calibrationId;
     private String calibrationStatus;
+    private String calibrationReviewResult;
+    private String calibrationReviewComment;
     private String uploaderName;
     private LocalDateTime recordedAt;
     private LocalDateTime uploadedAt;
@@ -86,6 +88,22 @@ public class VideoView {
 
     public void setCalibrationStatus(String calibrationStatus) {
         this.calibrationStatus = calibrationStatus;
+    }
+
+    public String getCalibrationReviewResult() {
+        return calibrationReviewResult;
+    }
+
+    public void setCalibrationReviewResult(String calibrationReviewResult) {
+        this.calibrationReviewResult = calibrationReviewResult;
+    }
+
+    public String getCalibrationReviewComment() {
+        return calibrationReviewComment;
+    }
+
+    public void setCalibrationReviewComment(String calibrationReviewComment) {
+        this.calibrationReviewComment = calibrationReviewComment;
     }
 
     public String getUploaderName() {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import http from '../api/http'
@@ -13,13 +13,24 @@ const loading = ref(false)
 const onlyPending = ref(true)
 const filters = reactive({ balanceId: null, recordNo: '' })
 const dateRange = ref([])
+const compact = ref(false)
 
 const canReview = computed(() => ['REVIEWER', 'ADMIN'].includes(auth.user?.role))
 const pendingCount = computed(() => records.value.filter((row) => row.status === 'SUBMITTED').length)
 
 onMounted(async () => {
+  syncCompact()
+  window.addEventListener('resize', syncCompact)
   await Promise.all([loadBalances(), load()])
 })
+
+onUnmounted(() => {
+  window.removeEventListener('resize', syncCompact)
+})
+
+function syncCompact() {
+  compact.value = window.innerWidth <= 1200
+}
 
 async function loadBalances() {
   try {
@@ -165,18 +176,18 @@ function open(row) {
       </div>
 
       <el-table :data="records" v-loading="loading" size="small" empty-text="没有符合条件的记录">
-        <el-table-column prop="recordNo" label="记录编号" width="175" />
-        <el-table-column prop="balanceCode" label="天平" width="80" />
-        <el-table-column prop="calibrationTime" label="校验时间" width="160" />
-        <el-table-column prop="inspectorName" label="检验人员" width="90" />
-        <el-table-column label="结论" width="90" align="center">
+        <el-table-column prop="recordNo" label="记录编号" width="160" />
+        <el-table-column prop="balanceCode" label="天平" width="65" />
+        <el-table-column prop="calibrationTime" label="校验时间" width="145" />
+        <el-table-column prop="inspectorName" label="检验人员" width="80" />
+        <el-table-column label="结论" width="75" align="center">
           <template #default="{ row }">
             <el-tag :type="row.externalResult === '是' ? 'success' : 'danger'" size="small">
               {{ row.externalResult === '是' ? '通过' : '不通过' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }">
             <el-tag
               :type="reviewStateOf(row.status, row.reviewResult).type"
@@ -187,12 +198,12 @@ function open(row) {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="复核结论" width="95" align="center">
+        <el-table-column label="复核结论" width="80" align="center">
           <template #default="{ row }">{{ reviewResultText(row.reviewResult) }}</template>
         </el-table-column>
-        <el-table-column prop="reviewerName" label="复核人" width="90" />
-        <el-table-column prop="reviewedAt" label="复核时间" width="160" />
-        <el-table-column label="操作" min-width="190" align="center">
+        <el-table-column v-if="!compact" prop="reviewerName" label="复核人" width="80" />
+        <el-table-column v-if="!compact" prop="reviewedAt" label="复核时间" width="140" />
+        <el-table-column label="操作" width="130" align="center">
           <template #default="{ row }">
             <el-button link type="primary" @click="open(row)">查看</el-button>
             <template v-if="canReview">

@@ -26,6 +26,8 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id, c.status AS calibration_status,
+                   rv.result AS calibration_review_result,
+                   rv.comment AS calibration_review_comment,
                    u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames
@@ -33,6 +35,7 @@ public interface VideoMapper {
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
             LEFT JOIN calibration c ON c.video_id = v.id
+            LEFT JOIN review rv ON rv.calibration_id = c.id
             ORDER BY v.id DESC
             """)
     List<VideoView> findAll();
@@ -40,6 +43,8 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id, c.status AS calibration_status,
+                   rv.result AS calibration_review_result,
+                   rv.comment AS calibration_review_comment,
                    u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames
@@ -47,6 +52,7 @@ public interface VideoMapper {
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
             LEFT JOIN calibration c ON c.video_id = v.id
+            LEFT JOIN review rv ON rv.calibration_id = c.id
             WHERE v.uploader_id = #{uploaderId}
             ORDER BY v.id DESC
             """)
@@ -58,6 +64,8 @@ public interface VideoMapper {
     @Select("""
             SELECT v.id, v.original_name, v.stored_name, v.size_bytes, v.balance_id, b.code AS balance_code,
                    c.id AS calibration_id, c.status AS calibration_status,
+                   rv.result AS calibration_review_result,
+                   rv.comment AS calibration_review_comment,
                    u.display_name AS uploader_name, v.recorded_at, v.uploaded_at, v.status, v.message,
                    v.person_card, v.identity_verified, v.analysis_profile,
                    v.analysis_confidence, v.anomaly_frames
@@ -65,6 +73,7 @@ public interface VideoMapper {
             JOIN sys_user u ON u.id = v.uploader_id
             LEFT JOIN balance b ON b.id = v.balance_id
             LEFT JOIN calibration c ON c.video_id = v.id
+            LEFT JOIN review rv ON rv.calibration_id = c.id
             WHERE v.id = #{id}
             """)
     VideoView findViewById(Long id);

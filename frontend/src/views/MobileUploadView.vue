@@ -151,6 +151,9 @@ function statusLabel(status) {
 }
 
 function recentStatus(item) {
+  if (item.calibrationStatus === 'DRAFT' && item.calibrationReviewResult === 'REJECTED') {
+    return '已退回'
+  }
   if (item.status === 'ANALYZED' && item.calibrationStatus) {
     return {
       DRAFT: '待确认',

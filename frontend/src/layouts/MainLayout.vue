@@ -123,4 +123,21 @@ async function onLogout() {
 .menu :deep(.el-menu-item.is-active) { color: #1f4e8c; background: #eef3fb; font-weight: 700; }
 .version { margin-top: auto; padding: 12px 20px 0; font-size: 11px; color: #a6b1c3; line-height: 1.7; }
 .main { flex: 1; padding: 18px 22px 26px; min-width: 0; }
+@media (max-width: 1400px) {
+  .side { width: 176px; flex-basis: 176px; }
+  .main { padding: 14px 16px 22px; }
+}
+@media (max-width: 1100px) {
+  .side { width: 64px; flex-basis: 64px; }
+  .group, .version { display: none; }
+  .menu :deep(.el-menu-item) {
+    justify-content: center;
+    padding: 0 !important;
+  }
+  .menu :deep(.el-menu-item span) { display: none; }
+  .topbar { padding: 0 14px; }
+  .brand { font-size: 15px; }
+  .badge { display: none; }
+  .main { padding: 12px; }
+}
 </style>

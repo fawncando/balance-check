@@ -112,7 +112,7 @@ python -m venv .venv
 - 复核人员对待复核记录作出通过或退回结论：通过后状态变为 REVIEWED 并锁定，退回则回到 DRAFT 并保留退回意见
 - 退回必须填写复核意见，通过可不填；复核结论一条记录一条，重复复核覆盖上一条，历次动作写入 audit_log
 - 已复核记录可由复核人员解锁，记录回到草稿，检验人员修改后重新提交
-- 记录查询支持按天平、状态、记录编号关键字与日期段过滤；检验人员只能查询与查看自己创建的记录
+- 记录查询支持按天平、状态、记录编号关键字与日期段过滤；传 `pageSize` 时按页返回，总数在 `X-Total-Count` 响应头，前端带分页控件；检验人员只能查询与查看自己创建的记录
 - 复核人员与管理员可直接下载服务端生成的 A4 PDF；保留 HTML 打印页作为兼容入口
 - 记录详情展示复核结论、复核意见与九次称量偏差曲线（相对标称值的百分比，允许带 ±0.05%）
 - 管理员可填写原因作废记录；作废后保留九次数据和审计日志，并永久禁止修改、提交、复核和解锁
@@ -138,6 +138,8 @@ python -m venv .venv
 - 上传成功后前端自动调用 `POST /api/videos/{id}/analyze`，状态按 `UPLOADED → ANALYZING → ANALYZED/FAILED` 推进
 - 识别任务进入后台线程池，接口约 100 ms 返回 `ANALYZING`，前端每秒轮询视频状态
 - 检验工作台显示手机上传入口二维码；手机打开 `/mobile` 专用页面，选择或拍摄视频后直接传到电脑
+- 识别成功后默认删除源视频并清空存储路径（`APP_VIDEO_DELETE_SOURCE=false` 可保留作证据），清理后工作台隐藏“重新识别”，记录与 PDF 不受影响
+- 记录列表支持后端分页：`page`/`pageSize` 控制分页，响应头 `X-Total-Count` 返回总数
 - 上传时记录视频实际拍摄开始时间，测量时间按“拍摄时间 + 视频秒数”计算
 - 工作台和手机最近上传列表自动轮询，不再需要手工刷新
 - 上传记录状态跟随校验记录显示为待确认、待复核、已复核或已作废
@@ -182,7 +184,7 @@ python -m venv .venv
 | POST | /api/calibrations/{id}/review | 复核通过或退回（复核人员） |
 | POST | /api/calibrations/{id}/reopen | 解锁已复核记录（复核人员） |
 | POST | /api/calibrations/{id}/void | 填写原因作废记录（管理员） |
-| GET | /api/calibrations | 记录查询（balanceId、status、recordNo、dateFrom、dateTo） |
+| GET | /api/calibrations | 记录查询（balanceId、status、recordNo、dateFrom、dateTo、page、pageSize；总数见 X-Total-Count） |
 | GET | /api/calibrations/{id} | 记录详情 |
 | GET | /api/calibrations/export?id= | 记录表打印页（HTML，复核人员） |
 | GET | /api/calibrations/{id}/pdf | 服务端生成 A4 PDF（复核人员、管理员） |
@@ -202,9 +204,9 @@ python -m venv .venv
 
 ```powershell
 pwsh -File scripts\test-all.ps1            # 一键：后端编译 + 独立校验 + 前端测试（后端在线时含接口冒烟）
-pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、健康脱敏、未知路径 404、真实视频与上传（22 项）
+pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、健康脱敏、未知路径 404、真实视频与上传（23 项）
 pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、草稿、提交锁定、双量程（14 项）
-pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、导出（36 项）
+pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、分页、导出（40 项）
 pwsh -File scripts\batch6-unit-check.ps1   # 复核/作废规则、记录表渲染与识别失败文案（22 项）
 pwsh -File scripts\void-test.ps1           # 作废权限、原因、锁定、查询与审计（13 项）
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）

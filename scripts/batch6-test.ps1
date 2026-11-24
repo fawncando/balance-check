@@ -131,6 +131,19 @@ Check '非法状态取值被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusC
 $r = Invoke-WebRequest "$base/api/calibrations?dateFrom=2026-10-20&dateTo=2026-10-10" -WebSession $reviewer -SkipHttpErrorCheck
 Check '开始日期晚于结束日期被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
 
+$r = Invoke-WebRequest "$base/api/calibrations?pageSize=1" -WebSession $reviewer -SkipHttpErrorCheck
+$pageData = @((($r.Content | ConvertFrom-Json).data))
+$pageTotal = @($r.Headers['X-Total-Count']) -join ''
+Check '分页返回指定条数' ($r.StatusCode -eq 200 -and $pageData.Count -eq 1) "status=$($r.StatusCode) count=$($pageData.Count)"
+Check '分页返回总数响应头' ([int]$pageTotal -ge 1) "total=$pageTotal"
+$firstPageId = $pageData[0].id
+$r = Invoke-WebRequest "$base/api/calibrations?page=2&pageSize=1" -WebSession $reviewer -SkipHttpErrorCheck
+$secondPageIds = @((($r.Content | ConvertFrom-Json).data) | ForEach-Object { $_.id })
+$expectedSecond = if ([int]$pageTotal -ge 2) { 1 } else { 0 }
+Check '第二页与第一页不重复' ($secondPageIds.Count -eq $expectedSecond -and -not ($secondPageIds -contains $firstPageId)) "count=$($secondPageIds.Count) total=$pageTotal"
+$r = Invoke-WebRequest "$base/api/calibrations?pageSize=500" -WebSession $reviewer -SkipHttpErrorCheck
+Check '非法每页条数被拒绝' ($r.StatusCode -eq 400) "status=$($r.StatusCode)"
+
 $r = Invoke-WebRequest "$base/api/calibrations/export?id=$recordId" -WebSession $reviewer -SkipHttpErrorCheck
 Check '复核人员导出记录表' ($r.StatusCode -eq 200 -and $r.Content -like '*电子天平校验记录表*') "status=$($r.StatusCode)"
 Check '导出内容含记录编号与复核人' ($r.Content -like "*$recordNo*" -and $r.Content -like '*齐一*')

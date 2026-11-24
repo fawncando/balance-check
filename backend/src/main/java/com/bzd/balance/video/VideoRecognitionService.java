@@ -1,5 +1,6 @@
 package com.bzd.balance.video;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
@@ -48,6 +49,7 @@ public class VideoRecognitionService {
     private final TaskExecutor recognitionExecutor;
     private final UserMapper userMapper;
     private final Path uploadRoot;
+    private final boolean deleteSourceAfterSuccess;
 
     public VideoRecognitionService(VideoMapper videoMapper,
                                    BalanceMapper balanceMapper,
@@ -59,7 +61,10 @@ public class VideoRecognitionService {
                                    RecognitionProperties recognitionProperties,
                                    @Qualifier("recognitionExecutor") TaskExecutor recognitionExecutor,
                                    UserMapper userMapper,
-                                   StorageService storageService) {
+                                   StorageService storageService,
+                                   @org.springframework.beans.factory.annotation.Value(
+                                           "${app.video.delete-source-after-success:true}")
+                                   boolean deleteSourceAfterSuccess) {
         this.videoMapper = videoMapper;
         this.balanceMapper = balanceMapper;
         this.balanceService = balanceService;
@@ -71,6 +76,7 @@ public class VideoRecognitionService {
         this.recognitionExecutor = recognitionExecutor;
         this.userMapper = userMapper;
         this.uploadRoot = storageService.getRoot();
+        this.deleteSourceAfterSuccess = deleteSourceAfterSuccess;
     }
 
     public VideoView startAnalysis(Long videoId, SessionUser user, String ip) {
@@ -102,6 +108,9 @@ public class VideoRecognitionService {
             throw new BizException("视频关联的天平不存在");
         }
 
+        if (video.getRelativePath() == null || video.getRelativePath().isBlank()) {
+            throw new BizException("源视频已清理，如需重新识别请重新上传");
+        }
         Path videoPath = uploadRoot.resolve(video.getRelativePath()).normalize();
         if (!videoPath.startsWith(uploadRoot) || !Files.isRegularFile(videoPath)) {
             throw new BizException("视频文件不存在");
@@ -158,6 +167,10 @@ public class VideoRecognitionService {
             auditService.log(user.getId(), "VIDEO_ANALYZE", "VIDEO",
                     String.valueOf(videoId),
                     best.getProfile() + " -> " + record.getRecordNo(), ip);
+            if (deleteSourceAfterSuccess && cleanupSource(videoId, videoPath)) {
+                videoMapper.updateStatus(videoId, "ANALYZED",
+                        limit(message + "，源视频已按策略清理", 500));
+            }
         } catch (RuntimeException ex) {
             log.error("视频 {} 识别失败", videoId, ex);
             String message = ex instanceof BizException && ex.getMessage() != null
@@ -312,6 +325,19 @@ public class VideoRecognitionService {
             penalty += ratio;
         }
         return penalty;
+    }
+
+    /** 识别成功后按策略删除源视频，释放磁盘；失败时保留文件便于重试。 */
+    private boolean cleanupSource(Long videoId, Path videoPath) {
+        try {
+            Files.deleteIfExists(videoPath);
+            videoMapper.clearSource(videoId);
+            log.info("源视频已按策略清理：video={}", videoId);
+            return true;
+        } catch (IOException ex) {
+            log.warn("清理源视频失败，保留文件：video={}", videoId, ex);
+            return false;
+        }
     }
 
     private String limit(String value, int maxLength) {

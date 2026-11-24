@@ -30,6 +30,10 @@ app:
   # 手机入口：生产环境建议设置为 http://内网域名或电脑IP（不要带 /mobile）
   public-url: ${APP_PUBLIC_URL:}
   mobile-port: ${APP_MOBILE_PORT:5173}
+  video:
+    # true：识别成功后删除源视频（默认，按交付问题汇总方案 B，释放磁盘、便于换机演示）
+    # false：保留原始视频作为证据（方案 A），需按每年约 234GB 规划磁盘
+    delete-source-after-success: ${APP_VIDEO_DELETE_SOURCE:true}
   recognition:
     # 部署时安装 Python 依赖并把本项指向实际 python；开发机可指向 analysis/.venv
     python-command: ${APP_RECOGNITION_PYTHON:python}

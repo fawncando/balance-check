@@ -114,6 +114,7 @@ try {
     Check '上传视频成功并返回已上传状态' ($r.StatusCode -eq 200 -and $b.data.status -eq 'UPLOADED') `
         "status=$($r.StatusCode) id=$videoId"
     Check '上传后回传天平编号 F001' ($b.data.balanceCode -eq 'F001') "balance=$($b.data.balanceCode)"
+    Check '上传后回传源视频可用标记' ($b.data.sourceAvailable -eq $true) "sourceAvailable=$($b.data.sourceAvailable)"
     $recordedAt = [datetime]$b.data.recordedAt
     $recordedOk = $recordedAt.ToString('yyyy-MM-dd HH:mm') -eq '2026-10-17 09:12'
     Check '上传后回传实际拍摄时间' $recordedOk "recordedAt=$recordedAt"

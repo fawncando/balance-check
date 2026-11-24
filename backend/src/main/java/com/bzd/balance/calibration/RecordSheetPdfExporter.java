@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -34,6 +35,26 @@ public class RecordSheetPdfExporter {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final DateTimeFormatter STAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    /** 优先使用系统中文字体；Linux 上可按 Noto/文泉驿顺序回退。 */
+    private static final String CJK_FONT_FAMILY = chooseCjkFont();
+
+    private static String chooseCjkFont() {
+        List<String> candidates = List.of(
+                "Microsoft YaHei", "微软雅黑", "SimSun", "宋体",
+                "Noto Sans CJK SC", "WenQuanYi Micro Hei", "PingFang SC");
+        try {
+            List<String> available = List.of(
+                    GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+            for (String candidate : candidates) {
+                if (available.contains(candidate)) {
+                    return candidate;
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // 无图形环境时退回逻辑字体
+        }
+        return Font.SANS_SERIF;
+    }
 
     private final CalibrationService calibrationService;
 
@@ -69,10 +90,10 @@ public class RecordSheetPdfExporter {
             graphics.setColor(Color.WHITE);
             graphics.fillRect(0, 0, WIDTH, HEIGHT);
 
-            Font title = new Font("Microsoft YaHei", Font.BOLD, 42);
-            Font heading = new Font("Microsoft YaHei", Font.BOLD, 24);
-            Font body = new Font("Microsoft YaHei", Font.PLAIN, 20);
-            Font small = new Font("Microsoft YaHei", Font.PLAIN, 17);
+            Font title = new Font(CJK_FONT_FAMILY, Font.BOLD, 42);
+            Font heading = new Font(CJK_FONT_FAMILY, Font.BOLD, 24);
+            Font body = new Font(CJK_FONT_FAMILY, Font.PLAIN, 20);
+            Font small = new Font(CJK_FONT_FAMILY, Font.PLAIN, 17);
 
             int margin = 92;
             int y = 100;

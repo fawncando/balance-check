@@ -160,12 +160,14 @@ public class VideoService {
         if (!"UPLOADED".equals(video.getStatus())) {
             throw new BizException("视频已进入识别流程，不能删除");
         }
-        Path target = uploadRoot.resolve(video.getRelativePath()).normalize();
-        if (target.startsWith(uploadRoot)) {
-            try {
-                Files.deleteIfExists(target);
-            } catch (IOException ignored) {
-                // 文件删除失败不影响记录清理，后续由运维处理
+        if (video.getRelativePath() != null && !video.getRelativePath().isBlank()) {
+            Path target = uploadRoot.resolve(video.getRelativePath()).normalize();
+            if (target.startsWith(uploadRoot)) {
+                try {
+                    Files.deleteIfExists(target);
+                } catch (IOException ignored) {
+                    // 文件删除失败不影响记录清理，后续由运维处理
+                }
             }
         }
         videoMapper.deleteById(id);

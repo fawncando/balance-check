@@ -17,6 +17,10 @@ const state = computed(() => reviewStateOf(record.value?.status, record.value?.r
 const isReviewer = computed(() => ['REVIEWER', 'ADMIN'].includes(auth.user?.role))
 const isAdmin = computed(() => auth.user?.role === 'ADMIN')
 const isOwner = computed(() => record.value?.inspectorId != null && record.value.inspectorId === auth.user?.id)
+const returnTo = computed(() => {
+  const target = String(route.query.returnTo || '')
+  return ['/workbench', '/records', '/reviews'].includes(target) ? target : '/records'
+})
 const canEdit = computed(() => record.value?.status === 'DRAFT' && (isOwner.value || auth.user?.role === 'ADMIN'))
 const canReview = computed(() => isReviewer.value && record.value?.status === 'SUBMITTED')
 const canReopen = computed(() => isReviewer.value && record.value?.status === 'REVIEWED')
@@ -70,7 +74,8 @@ async function submit() {
   }
   try {
     record.value = await http.post(`/calibrations/${record.value.id}/submit`)
-    ElMessage.success('已提交复核')
+    ElMessage.success('已提交复核，正在返回')
+    router.replace(returnTo.value)
   } catch (err) {
     ElMessage.error(err.message)
   }
@@ -161,14 +166,17 @@ function exportSheet() {
     <div class="head">
       <h1 class="page-title">校验记录详情</h1>
       <div class="actions">
-        <el-button v-if="canEdit" @click="router.push(`/calibrations/${record.id}/edit`)">编辑</el-button>
+        <el-button
+          v-if="canEdit"
+          @click="router.push({ path: `/calibrations/${record.id}/edit`, query: { returnTo } })"
+        >编辑</el-button>
         <el-button v-if="canEdit" type="primary" @click="submit">提交复核</el-button>
         <el-button v-if="canReview" type="success" @click="approve">复核通过</el-button>
         <el-button v-if="canReview" type="danger" plain @click="reject">退回</el-button>
         <el-button v-if="canReopen" type="warning" plain @click="reopen">解锁</el-button>
         <el-button v-if="canVoid" type="danger" plain @click="voidRecord">作废记录</el-button>
         <el-button v-if="canExport" @click="exportSheet">下载 PDF</el-button>
-        <el-button link @click="router.push('/records')">返回列表</el-button>
+        <el-button link @click="router.push(returnTo)">返回</el-button>
       </div>
     </div>
 

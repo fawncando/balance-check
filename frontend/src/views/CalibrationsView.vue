@@ -13,6 +13,7 @@ const loading = ref(false)
 const filters = reactive({ recordNo: '', balanceId: null, status: '' })
 const dateRange = ref([])
 const compact = ref(false)
+let refreshTimer = null
 
 const isInspector = computed(() => auth.user?.role === 'INSPECTOR')
 
@@ -20,14 +21,24 @@ onMounted(async () => {
   syncCompact()
   window.addEventListener('resize', syncCompact)
   await Promise.all([loadBalances(), load()])
+  refreshTimer = window.setInterval(() => {
+    if (document.visibilityState === 'visible') load(true)
+  }, 4000)
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', syncCompact)
+  if (refreshTimer) window.clearInterval(refreshTimer)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 
 function syncCompact() {
   compact.value = window.innerWidth <= 1200
+}
+
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') load(true)
 }
 
 async function loadBalances() {
@@ -49,14 +60,15 @@ function queryParams() {
   }
 }
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (silent && loading.value) return
+  if (!silent) loading.value = true
   try {
     records.value = await http.get('/calibrations', { params: queryParams() })
   } catch (err) {
-    ElMessage.error(err.message)
+    if (!silent) ElMessage.error(err.message)
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -69,7 +81,7 @@ function reset() {
 }
 
 function open(row) {
-  router.push(`/calibrations/${row.id}`)
+  router.push({ path: `/calibrations/${row.id}`, query: { returnTo: '/records' } })
 }
 
 function datePart(value) {

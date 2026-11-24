@@ -82,7 +82,10 @@ function isReturned(row) {
 
 function openCalibration(row) {
   const suffix = row.calibrationStatus === 'DRAFT' ? '/edit' : ''
-  router.push(`/calibrations/${row.calibrationId}${suffix}`)
+  router.push({
+    path: `/calibrations/${row.calibrationId}${suffix}`,
+    query: { returnTo: '/workbench' }
+  })
 }
 
 async function loadMobileEntry() {
@@ -177,7 +180,10 @@ async function startUpload() {
     await loadVideos()
     if (analyzed.status === 'ANALYZED' && analyzed.calibrationId) {
       ElMessage.success('识别完成，已生成校验草稿')
-      router.push(`/calibrations/${analyzed.calibrationId}/edit`)
+      router.push({
+        path: `/calibrations/${analyzed.calibrationId}/edit`,
+        query: { returnTo: '/workbench' }
+      })
     } else {
       ElMessage.error(analyzed.message || '识别失败，请检查视频后重试')
     }
@@ -199,7 +205,10 @@ async function analyzeVideo(row) {
       return
     }
     ElMessage.success('识别完成，已生成校验草稿')
-    router.push(`/calibrations/${analyzed.calibrationId}/edit`)
+    router.push({
+      path: `/calibrations/${analyzed.calibrationId}/edit`,
+      query: { returnTo: '/workbench' }
+    })
   } catch (err) {
     ElMessage.error(err.message)
   } finally {

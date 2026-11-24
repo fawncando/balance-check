@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import http from '../api/http'
 import { auth } from '../stores/auth'
-import { reviewResultText, reviewStateOf } from '../utils/review'
+import { reviewStateOf } from '../utils/review'
 
 const router = useRouter()
 const records = ref([])
@@ -13,23 +13,26 @@ const loading = ref(false)
 const onlyPending = ref(true)
 const filters = reactive({ balanceId: null, recordNo: '' })
 const dateRange = ref([])
-const compact = ref(false)
+let refreshTimer = null
 
 const canReview = computed(() => ['REVIEWER', 'ADMIN'].includes(auth.user?.role))
 const pendingCount = computed(() => records.value.filter((row) => row.status === 'SUBMITTED').length)
 
 onMounted(async () => {
-  syncCompact()
-  window.addEventListener('resize', syncCompact)
   await Promise.all([loadBalances(), load()])
+  refreshTimer = window.setInterval(() => {
+    if (document.visibilityState === 'visible') load(true)
+  }, 4000)
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', syncCompact)
+  if (refreshTimer) window.clearInterval(refreshTimer)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 
-function syncCompact() {
-  compact.value = window.innerWidth <= 1200
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') load(true)
 }
 
 async function loadBalances() {
@@ -51,14 +54,15 @@ function queryParams() {
   }
 }
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (silent && loading.value) return
+  if (!silent) loading.value = true
   try {
     records.value = await http.get('/calibrations', { params: queryParams() })
   } catch (err) {
-    ElMessage.error(err.message)
+    if (!silent) ElMessage.error(err.message)
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -135,7 +139,7 @@ async function reopen(row) {
 }
 
 function open(row) {
-  router.push(`/calibrations/${row.id}`)
+  router.push({ path: `/calibrations/${row.id}`, query: { returnTo: '/reviews' } })
 }
 
 function datePart(value) {
@@ -184,18 +188,24 @@ function timePart(value) {
         <el-button @click="reset">重置</el-button>
       </div>
 
-      <el-table :data="records" v-loading="loading" size="small" empty-text="没有符合条件的记录">
-        <el-table-column prop="recordNo" label="记录编号" width="160" />
-        <el-table-column prop="balanceCode" label="天平" width="65" />
-        <el-table-column label="校验时间" width="130">
+      <el-table :data="records" v-loading="loading" size="small" empty-text="当前没有待复核记录">
+        <el-table-column label="记录" min-width="190">
           <template #default="{ row }">
-            <div class="datetime-cell">
-              <span>{{ datePart(row.calibrationTime) }}</span>
-              <small>{{ timePart(row.calibrationTime) }}</small>
+            <div class="record-cell">
+              <strong>{{ row.recordNo }}</strong>
+              <small>{{ row.balanceCode }} · {{ row.balanceUniqueNo }}</small>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="inspectorName" label="检验人员" width="80" />
+        <el-table-column prop="inspectorName" label="检验人员" width="90" />
+        <el-table-column label="提交时间" width="130">
+          <template #default="{ row }">
+            <div class="datetime-cell">
+              <span>{{ datePart(row.submittedAt || row.calibrationTime) }}</span>
+              <small>{{ timePart(row.submittedAt || row.calibrationTime) }}</small>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="结论" width="75" align="center">
           <template #default="{ row }">
             <el-tag :type="row.externalResult === '是' ? 'success' : 'danger'" size="small">
@@ -203,7 +213,7 @@ function timePart(value) {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90" align="center">
+        <el-table-column label="状态" width="95" align="center">
           <template #default="{ row }">
             <el-tag
               :type="reviewStateOf(row.status, row.reviewResult).type"
@@ -214,19 +224,7 @@ function timePart(value) {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="复核结论" width="80" align="center">
-          <template #default="{ row }">{{ reviewResultText(row.reviewResult) }}</template>
-        </el-table-column>
-        <el-table-column v-if="!compact" prop="reviewerName" label="复核人" width="80" />
-        <el-table-column v-if="!compact" label="复核时间" width="130">
-          <template #default="{ row }">
-            <div class="datetime-cell">
-              <span>{{ datePart(row.reviewedAt) }}</span>
-              <small>{{ timePart(row.reviewedAt) }}</small>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="130" align="center">
+        <el-table-column label="操作" min-width="190" align="center">
           <template #default="{ row }">
             <el-button link type="primary" @click="open(row)">查看</el-button>
             <template v-if="canReview">
@@ -252,6 +250,8 @@ function timePart(value) {
 .summary { font-size: 13px; color: #5c6b87; }
 .summary b { color: #1f4e8c; font-size: 16px; }
 .filters { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.record-cell strong, .record-cell small { display: block; }
+.record-cell small { color: #7a889f; font-size: 11px; margin-top: 3px; }
 .datetime-cell { line-height: 1.35; white-space: nowrap; }
 .datetime-cell span, .datetime-cell small { display: block; }
 .datetime-cell small { color: #7a889f; font-size: 11px; }

@@ -213,11 +213,15 @@ async function save(submitAfter = false) {
     recordId.value = record.id
     if (submitAfter) {
       await http.post(`/calibrations/${record.id}/submit`)
-      ElMessage.success('已提交复核')
+      ElMessage.success('已提交复核，正在返回')
     } else {
       ElMessage.success('已保存草稿')
     }
-    router.replace(`/calibrations/${record.id}`)
+    const returnTo = String(route.query.returnTo || '')
+    const allowedReturn = ['/workbench', '/records', '/reviews']
+    router.replace(allowedReturn.includes(returnTo)
+      ? returnTo
+      : submitAfter ? '/workbench' : `/calibrations/${record.id}`)
   } catch (err) {
     ElMessage.error(err.message)
   } finally {

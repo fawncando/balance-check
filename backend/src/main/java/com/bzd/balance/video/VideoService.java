@@ -93,7 +93,7 @@ public class VideoService {
                 sha256 = HexFormat.of().formatHex(digest.digest());
             }
         } catch (IOException | NoSuchAlgorithmException ex) {
-            throw new BizException(500, "保存视频失败：" + ex.getMessage());
+            throw new BizException(503, "视频存储目录不可写，请检查磁盘空间与目录权限");
         }
 
         Video video = new Video();

@@ -61,6 +61,11 @@ public class RecognitionResult {
         this.needsReview = needsReview;
     }
 
+    public boolean isConfidenceBelow(BigDecimal minimum) {
+        return minimum != null
+                && (confidence == null || confidence.compareTo(minimum) < 0);
+    }
+
     public List<Weighing> getWeighings() {
         return weighings;
     }

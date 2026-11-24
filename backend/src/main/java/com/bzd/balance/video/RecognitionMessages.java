@@ -1,5 +1,7 @@
 package com.bzd.balance.video;
 
+import java.math.BigDecimal;
+
 /**
  * 视频识别失败时返回给用户的安全提示。
  *
@@ -42,5 +44,16 @@ public final class RecognitionMessages {
                     + "），请先在人员管理中绑定后再上传";
         }
         return "人员卡号 " + detectedCard + " 与当前登录账号 " + expectedCard + " 不一致";
+    }
+
+    /** 识别可信度过低时不建记录，以便与真实超差明确区分。 */
+    public static String lowConfidence(BigDecimal confidence, BigDecimal minimum) {
+        String actual = confidence == null
+                ? "未知" : confidence.stripTrailingZeros().toPlainString() + "%";
+        String threshold = minimum == null
+                ? "安全阈值" : minimum.stripTrailingZeros().toPlainString() + "%";
+        return "识别结果可信度仅 " + actual + "，低于 " + threshold
+                + " 安全阈值，已停止生成记录。请确认上传时选择的天平与视频设备一致；"
+                + "真实超差会正常生成草稿并标记“超差”";
     }
 }

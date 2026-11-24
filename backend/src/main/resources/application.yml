@@ -53,6 +53,8 @@ app:
     timeout-seconds: ${APP_RECOGNITION_TIMEOUT:600}
     qr-script: ${APP_RECOGNITION_QR_SCRIPT:../analysis/generate_qr.py}
     generic-profile: ${APP_RECOGNITION_GENERIC_PROFILE:generic}
+    # 低于该安全阈值视为设备/档案不匹配并直接失败；真实超差只要字符识别可信仍会建单。
+    minimum-confidence: ${APP_RECOGNITION_MIN_CONFIDENCE:30}
     # 同一视频并行执行的显示档案数；设为 1 退化为串行（兼容低配机器）
     profile-parallelism: ${APP_RECOGNITION_PARALLELISM:3}
     device-profiles:

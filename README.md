@@ -160,6 +160,7 @@ python -m venv .venv
 - F002 读数数量相同时优先保留检测到 `mg` 的档案，示值单位与换算值分别保存
 - 手机不同录制分辨率会先归一化到模板基准 `544×960`，再裁剪显示屏区域
 - 固定区域不足九次时自动搜索显示屏位置和缩放比例，原有样例仍优先走固定标定
+- 识别置信度低于 `30%` 安全阈值时直接判识别失败，不生成记录，用于拦截选错天平等明显不匹配场景；真实超差只要字符识别可信仍会生成草稿并标记“超差”
 - 设备与候选档案通过 `app.recognition.device-profiles` 配置，新增设备只需增加模板、`profiles.json` 和映射
 - 使用 OpenCV QRCodeDetector 识别视频中人员卡；卡号与上传账号 `card_no` 一致才标记通过，出现不一致时识别失败且不建单
 - 输出整体/单次置信度与异常帧数；低于阈值或异常帧过多时标记“需重点复核”
@@ -215,7 +216,7 @@ pwsh -File scripts\test-all.ps1            # 一键：后端编译 + 独立校�
 pwsh -File scripts\smoke-test.ps1          # 批次 3：登录、权限、CORS、Cookie、会话与上传（28 项）
 pwsh -File scripts\batch5-test.ps1         # 批次 5：判定、过程信息校验、提交锁定、双量程（17 项）
 pwsh -File scripts\batch6-test.ps1         # 批次 6：复核、退回、解锁、查询、分页、导出（40 项）
-pwsh -File scripts\batch6-unit-check.ps1   # 复核/作废规则、记录表渲染与识别失败文案（22 项）
+pwsh -File scripts\batch6-unit-check.ps1   # 复核/作废规则、记录表渲染与识别阈值/失败文案（26 项）
 pwsh -File scripts\void-test.ps1           # 作废权限、原因、锁定、查询与审计（13 项）
 pwsh -File scripts\batch7-test.ps1         # 批次 7：清单维护、操作日志、模板、权限（36 项）
 pwsh -File scripts\batch7-unit-check.ps1   # 天平清单与局域网地址（13 项，不依赖数据库）

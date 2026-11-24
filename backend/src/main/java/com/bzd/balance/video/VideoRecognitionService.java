@@ -168,6 +168,11 @@ public class VideoRecognitionService {
             if (found != 9) {
                 throw new BizException(RecognitionMessages.incompleteWeighings(found, 9));
             }
+            if (best.isConfidenceBelow(recognitionProperties.getMinimumConfidence())) {
+                throw new BizException(RecognitionMessages.lowConfidence(
+                        best.getConfidence(),
+                        recognitionProperties.getMinimumConfidence()));
+            }
 
             String card = best.getPersonCard();
             User account = userMapper.findById(user.getId());

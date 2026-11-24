@@ -1,4 +1,7 @@
+import java.math.BigDecimal;
+
 import com.bzd.balance.video.RecognitionMessages;
+import com.bzd.balance.video.RecognitionResult;
 
 /**
  * 识别失败提示的独立校验：文案要具体、可读，且不得泄露堆栈或服务器路径。
@@ -33,6 +36,28 @@ public class RecognitionMessageCheck {
                         && safe(RecognitionMessages.NOT_READY)
                         && safe(RecognitionMessages.ALL_PROFILES_FAILED)
                         && safe(RecognitionMessages.UNEXPECTED_FAILURE));
+
+        RecognitionResult low = new RecognitionResult();
+        low.setConfidence(new BigDecimal("8.99"));
+        check("低置信度识别按失败处理",
+                low.isConfidenceBelow(new BigDecimal("30")));
+
+        RecognitionResult genuineFailure = new RecognitionResult();
+        genuineFailure.setConfidence(new BigDecimal("84.62"));
+        check("真实超差不会被安全阈值拦截",
+                !genuineFailure.isConfidenceBelow(new BigDecimal("30")));
+
+        String lowMessage = RecognitionMessages.lowConfidence(
+                new BigDecimal("8.99"), new BigDecimal("30"));
+        check("低置信度提示解释天平可能选错",
+                safe(lowMessage)
+                        && lowMessage.contains("天平")
+                        && lowMessage.contains("设备一致")
+                        && lowMessage.contains("停止生成记录"));
+
+        check("低置信度提示明确真实超差仍会建单",
+                lowMessage.contains("真实超差")
+                        && lowMessage.contains("超差"));
 
         System.out.println();
         System.out.println("结果：" + pass + " 通过，" + fail + " 失败");
